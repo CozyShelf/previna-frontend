@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-previna: #ff5555;
+  --color-previna-light: #fc6c6c;
+  --font-sans: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-white text-slate-900 antialiased;
+  }
+}
