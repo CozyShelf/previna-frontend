@@ -1,8 +1,11 @@
-import type { ButtonProps } from "@/components/common/Button";
+import type { ButtonProps } from '@/components/common/Button'
 
-const BUTTON_CLASSES: Record<ButtonProps["style"], string> = {
-    default:
-        "w-full rounded-md bg-previna px-4 py-2 font-bold text-white shadow-sm transition-all duration-200 cursor-pointer hover:bg-previna-light hover:shadow-md active:shadow-sm focus:ring-previna focus:outline-none focus:ring-2 focus:ring-offset-2 sm:w-50",
-};
+const BASE =
+  'inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md px-3.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-previna-600 disabled:cursor-not-allowed disabled:opacity-60'
 
-export default BUTTON_CLASSES;
+const BUTTON_CLASSES: Record<ButtonProps['style'], string> = {
+  primary: `${BASE} bg-previna-600 text-white hover:bg-previna-700`,
+  secondary: `${BASE} border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50`,
+}
+
+export default BUTTON_CLASSES
