@@ -32,7 +32,9 @@ export function LoginPage() {
 
           <div className="flex flex-col gap-1">
             <h1 className="text-xl font-semibold tracking-tight">Entrar no Previna</h1>
-            <p className="text-zinc-600">Acesso para médicos e administradores.</p>
+            <p className="text-zinc-600">
+              Acesso para médicos, empresas parceiras e administradores.
+            </p>
           </div>
 
           <FormLogin />

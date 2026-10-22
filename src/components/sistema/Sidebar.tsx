@@ -14,7 +14,12 @@ const INICIO: ItemMenu = { to: '/', label: 'Início', icone: 'inicio' }
 
 const ITENS: Record<string, ItemMenu[]> = {
   MEDICO: [INICIO, { to: '/gestantes', label: 'Gestantes', icone: 'gestantes' }],
-  ADMIN: [INICIO, { to: '/empresas', label: 'Empresas parceiras', icone: 'empresas' }],
+  ADMIN: [
+    INICIO,
+    { to: '/medicos', label: 'Médicos', icone: 'medicos' },
+    { to: '/empresas', label: 'Empresas parceiras', icone: 'empresas' },
+  ],
+  EMPRESA_PARCEIRA: [INICIO],
 }
 
 export function Sidebar() {

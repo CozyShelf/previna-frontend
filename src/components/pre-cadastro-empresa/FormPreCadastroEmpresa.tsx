@@ -11,6 +11,7 @@ import { Button } from '../common/Button'
 import { Form } from '../common/Form'
 import { InputGroup } from '../common/InputGroup'
 import { SecaoFormulario } from '../common/SecaoFormulario'
+import { VALIDACOES_EMPRESA } from '../empresa/validacoesEmpresa'
 import type { EmpresaCadastrada } from './EmpresaPreCadastrada'
 
 export interface FormPreCadastroEmpresaProps {
@@ -28,17 +29,9 @@ const VALIDACOES: Validacoes<Campo> = {
     if (cnpj.length < 14) return 'O CNPJ deve ter 14 dígitos.'
     if (!cnpjValido(cnpj)) return 'CNPJ inválido. Confira os números digitados.'
   },
-  responsavel: (valor) => (valor.trim() ? undefined : 'Informe o nome do responsável.'),
-  email: (valor) => {
-    if (!valor) return 'Informe o e-mail.'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor))
-      return 'Informe um e-mail válido, como nome@exemplo.com.'
-  },
-  telefone: (valor) => {
-    const telefone = somenteDigitos(valor)
-    if (!telefone) return 'Informe o telefone.'
-    if (telefone.length < 10) return 'Informe o DDD e o número, com 10 ou 11 dígitos.'
-  },
+  responsavel: VALIDACOES_EMPRESA.responsavel,
+  email: VALIDACOES_EMPRESA.email,
+  telefone: VALIDACOES_EMPRESA.telefone,
 }
 
 export function FormPreCadastroEmpresa({ onCadastrado }: FormPreCadastroEmpresaProps) {

@@ -2,6 +2,7 @@ const CHAVE_TOKEN = 'previna.token'
 
 interface PayloadToken {
   perfil: string
+  primeiroAcesso: boolean
   exp: number
 }
 
@@ -18,6 +19,10 @@ export function perfilDoToken(token: string) {
 export function perfilDaSessao() {
   const token = obterToken()
   return token ? perfilDoToken(token) : undefined
+}
+
+export function primeiroAcessoDoToken(token: string) {
+  return decodificar(token).primeiroAcesso
 }
 
 export function salvarToken(token: string) {

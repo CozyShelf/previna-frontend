@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
 import { Avatar } from '@/components/sistema/Avatar'
 import { ComoFunciona, type Passo } from '@/components/sistema/ComoFunciona'
+import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { FILTRO_SITUACAO } from '@/components/sistema/filtros'
 import { SituacaoConta } from '@/components/sistema/SituacaoConta'
-import { get } from '@/lib/api'
+import { urlDaApi } from '@/lib/api'
 import { mascararCnpj, mascararTelefone } from '@/lib/mascaras'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 
@@ -18,6 +18,7 @@ interface Empresa {
   email: string
   telefone: string
   responsavel: string
+  logoUrl?: string
   primeiroAcessoPendente: boolean
 }
 
@@ -39,15 +40,6 @@ const PASSOS: Passo[] = [
 const COLUNAS = ['Empresa', 'Responsável', 'Contato', 'Situação']
 
 export function EmpresasPage() {
-  const [empresas, setEmpresas] = useState<Empresa[]>()
-  const [erro, setErro] = useState(false)
-
-  useEffect(() => {
-    get<Empresa[]>('/empresas')
-      .then(setEmpresas)
-      .catch(() => setErro(true))
-  }, [])
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -61,12 +53,14 @@ export function EmpresasPage() {
         }
       />
 
-      {erro && (
-        <Alerta mensagem="Não foi possível carregar as empresas. Recarregue a página para tentar de novo." />
-      )}
-      {!empresas && !erro && <p className="text-zinc-500">Carregando empresas…</p>}
-      {empresas?.length === 0 && <ComoFunciona passos={PASSOS} />}
-      {empresas && empresas.length > 0 && <TabelaEmpresas empresas={empresas} />}
+      <Listagem<Empresa>
+        caminho="/empresas"
+        descricaoBusca="Buscar por razão social, CNPJ, responsável ou e-mail"
+        filtros={[FILTRO_SITUACAO]}
+        vazio={<ComoFunciona passos={PASSOS} />}
+      >
+        {(empresas) => <TabelaEmpresas empresas={empresas} />}
+      </Listagem>
     </div>
   )
 }
@@ -89,7 +83,10 @@ function TabelaEmpresas({ empresas }: { empresas: Empresa[] }) {
             <tr key={empresa.id}>
               <td className="py-3 pr-4 pl-6">
                 <div className="flex items-center gap-3">
-                  <Avatar nome={empresa.razaoSocial} />
+                  <Avatar
+                    nome={empresa.razaoSocial}
+                    imagem={empresa.logoUrl && urlDaApi(empresa.logoUrl)}
+                  />
                   <div>
                     <p className="font-medium text-zinc-900">{empresa.razaoSocial}</p>
                     <p className="text-xs text-zinc-500 tabular-nums">

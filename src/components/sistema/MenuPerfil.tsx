@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { Icone } from '@/components/common/Icone'
-import { identificacao, type Perfil } from '@/hooks/usePerfil'
+import { identificacao, imagemDoPerfil, type Perfil } from '@/hooks/usePerfil'
 import { encerrarSessao } from '@/lib/auth'
 import { Avatar } from './Avatar'
 
@@ -47,7 +47,7 @@ export function MenuPerfil({ perfil }: MenuPerfilProps) {
         aria-expanded={aberto}
         className="flex h-9 cursor-pointer items-center gap-2.5 rounded-md pr-2 pl-1 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-previna-600"
       >
-        <Avatar nome={perfil?.nome} />
+        <Avatar nome={perfil?.nome} imagem={imagemDoPerfil(perfil)} />
         <span className="font-medium text-zinc-800">{perfil?.nome}</span>
         <Icone nome="expandir" className="size-4 text-zinc-500" />
       </button>

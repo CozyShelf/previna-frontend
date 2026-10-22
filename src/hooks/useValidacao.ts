@@ -30,7 +30,8 @@ export function useValidacao<C extends string>(validacoes: Validacoes<C>) {
       onChange: (e: ChangeEvent<HTMLInputElement>) => {
         const input = e.currentTarget
         if (mascara) input.value = mascara(input.value)
-        validar(input, input.value.length === input.maxLength)
+        // Arquivo escolhido já mostra o erro; texto só quando completa o tamanho máximo
+        validar(input, input.type === 'file' || input.value.length === input.maxLength)
       },
       onBlur: (e: FocusEvent<HTMLInputElement>) => validar(e.currentTarget, true),
     }

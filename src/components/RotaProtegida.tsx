@@ -1,7 +1,10 @@
 import { Navigate, Outlet } from 'react-router-dom'
 
-import { obterToken } from '@/lib/auth'
+import { obterToken, primeiroAcessoDoToken } from '@/lib/auth'
 
 export function RotaProtegida() {
-  return obterToken() ? <Outlet /> : <Navigate to="/login" replace />
+  const token = obterToken()
+  if (!token) return <Navigate to="/login" replace />
+  // Com a senha temporária só dá para concluir o primeiro acesso
+  return primeiroAcessoDoToken(token) ? <Navigate to="/primeiro-acesso" replace /> : <Outlet />
 }

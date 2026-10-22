@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
 import { Avatar } from '@/components/sistema/Avatar'
 import { ComoFunciona, type Passo } from '@/components/sistema/ComoFunciona'
+import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { FILTRO_SITUACAO } from '@/components/sistema/filtros'
 import { SituacaoConta } from '@/components/sistema/SituacaoConta'
-import { get } from '@/lib/api'
+import { usePerfil } from '@/hooks/usePerfil'
 import { formatarData, idadeGestacional } from '@/lib/datas'
 import { mascararCpf, mascararTelefone } from '@/lib/mascaras'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
@@ -20,6 +20,8 @@ interface Gestante {
   dum: string
   dataProvavelParto: string
   primeiroAcessoPendente: boolean
+  // Nome do médico responsável
+  medico: string
 }
 
 const PASSOS: Passo[] = [
@@ -37,23 +39,30 @@ const PASSOS: Passo[] = [
   },
 ]
 
+// Só para o médico com permissão de ver todas as gestantes
+const FILTRO_ACOMPANHAMENTO: FiltroListagem = {
+  nome: 'somenteMinhas',
+  rotulo: 'Acompanhamento',
+  opcoes: [
+    { valor: '', rotulo: 'Todas as gestantes' },
+    { valor: 'true', rotulo: 'Só as que acompanho' },
+  ],
+}
+
 const COLUNAS = ['Gestante', 'Telefone', 'Idade gestacional', 'Data provável do parto', 'Situação']
 
 export function GestantesPage() {
-  const [gestantes, setGestantes] = useState<Gestante[]>()
-  const [erro, setErro] = useState(false)
-
-  useEffect(() => {
-    get<Gestante[]>('/gestantes')
-      .then(setGestantes)
-      .catch(() => setErro(true))
-  }, [])
+  const verTodas = usePerfil()?.verTodasGestantes === true
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         titulo="Gestantes"
-        descricao="Cadastre as gestantes que você acompanha no pré-natal."
+        descricao={
+          verTodas
+            ? 'Por permissão do administrador, você vê as gestantes de todos os médicos.'
+            : 'Cadastre as gestantes que você acompanha no pré-natal.'
+        }
         acoes={
           <Link to="/gestantes/pre-cadastro" className={BUTTON_CLASSES.primary}>
             <Icone nome="adicionar" />
@@ -62,23 +71,32 @@ export function GestantesPage() {
         }
       />
 
-      {erro && (
-        <Alerta mensagem="Não foi possível carregar as gestantes. Recarregue a página para tentar de novo." />
-      )}
-      {!gestantes && !erro && <p className="text-zinc-500">Carregando gestantes…</p>}
-      {gestantes?.length === 0 && <ComoFunciona passos={PASSOS} />}
-      {gestantes && gestantes.length > 0 && <TabelaGestantes gestantes={gestantes} />}
+      <Listagem<Gestante>
+        caminho="/gestantes"
+        descricaoBusca="Buscar por nome ou CPF"
+        filtros={verTodas ? [FILTRO_SITUACAO, FILTRO_ACOMPANHAMENTO] : [FILTRO_SITUACAO]}
+        vazio={<ComoFunciona passos={PASSOS} />}
+      >
+        {(gestantes) => <TabelaGestantes gestantes={gestantes} comMedico={verTodas} />}
+      </Listagem>
     </div>
   )
 }
 
-function TabelaGestantes({ gestantes }: { gestantes: Gestante[] }) {
+interface TabelaGestantesProps {
+  gestantes: Gestante[]
+  comMedico: boolean
+}
+
+function TabelaGestantes({ gestantes, comMedico }: TabelaGestantesProps) {
+  const colunas = comMedico ? [...COLUNAS.slice(0, 1), 'Médico', ...COLUNAS.slice(1)] : COLUNAS
+
   return (
     <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <table className="w-full text-left">
         <thead className="border-b border-zinc-200 bg-zinc-50 text-xs text-zinc-500">
           <tr>
-            {COLUNAS.map((coluna) => (
+            {colunas.map((coluna) => (
               <th key={coluna} scope="col" className="px-4 py-2.5 font-medium first:pl-6">
                 {coluna}
               </th>
@@ -99,6 +117,7 @@ function TabelaGestantes({ gestantes }: { gestantes: Gestante[] }) {
                   </div>
                 </div>
               </td>
+              {comMedico && <td className="px-4 py-3 text-zinc-700">{gestante.medico}</td>}
               <td className="px-4 py-3 text-zinc-700 tabular-nums">
                 {mascararTelefone(gestante.telefone)}
               </td>

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post } from '@/lib/api'
 import { mascararCpf, mascararTelefone, somenteDigitos } from '@/lib/mascaras'
-import { cpfValido } from '@/lib/validacoes'
+import { erroCpf, erroEmail } from '@/lib/validacoes'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 import { Alerta } from '../common/Alerta'
 import { Button } from '../common/Button'
@@ -25,12 +25,7 @@ const dataInvalida = (valor: string) => !/^\d{4}-\d{2}-\d{2}$/.test(valor) || va
 // Mesmas regras do PreCadastroGestanteRequest no backend, com a mensagem do que corrigir
 const VALIDACOES: Validacoes<Campo> = {
   nome: (valor) => (valor.trim() ? undefined : 'Informe o nome completo.'),
-  cpf: (valor) => {
-    const cpf = somenteDigitos(valor)
-    if (!cpf) return 'Informe o CPF.'
-    if (cpf.length < 11) return 'O CPF deve ter 11 dígitos.'
-    if (!cpfValido(cpf)) return 'CPF inválido. Confira os números digitados.'
-  },
+  cpf: erroCpf,
   dataNascimento: (valor) => {
     if (!valor) return 'Informe a data de nascimento.'
     if (dataInvalida(valor)) return 'Informe uma data válida.'
@@ -41,10 +36,7 @@ const VALIDACOES: Validacoes<Campo> = {
     if (!telefone) return 'Informe o telefone.'
     if (telefone.length < 10) return 'Informe o DDD e o número, com 10 ou 11 dígitos.'
   },
-  email: (valor) =>
-    valor && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
-      ? 'Informe um e-mail válido, como nome@exemplo.com.'
-      : undefined,
+  email: (valor) => (valor ? erroEmail(valor) : undefined),
   dum: (valor) => {
     if (!valor) return 'Informe a data da última menstruação.'
     if (dataInvalida(valor)) return 'Informe uma data válida.'
