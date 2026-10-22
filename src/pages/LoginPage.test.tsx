@@ -2,17 +2,17 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
-import { MedicoLoginPage } from '@/pages/MedicoLoginPage'
+import { LoginPage } from '@/pages/LoginPage'
 
 function renderizar() {
   render(
     <MemoryRouter>
-      <MedicoLoginPage />
+      <LoginPage />
     </MemoryRouter>,
   )
 }
 
-describe('MedicoLoginPage', () => {
+describe('LoginPage', () => {
   it('exibe o título da tela de login', () => {
     renderizar()
 

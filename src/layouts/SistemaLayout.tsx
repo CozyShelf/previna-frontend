@@ -4,14 +4,14 @@ import { Outlet } from 'react-router-dom'
 import { MenuPerfil } from '@/components/sistema/MenuPerfil'
 import { Sidebar } from '@/components/sistema/Sidebar'
 import { Trilha } from '@/components/sistema/Trilha'
-import type { PerfilMedico } from '@/hooks/usePerfilMedico'
+import type { Perfil } from '@/hooks/usePerfil'
 import { get } from '@/lib/api'
 
 export function SistemaLayout() {
-  const [perfil, setPerfil] = useState<PerfilMedico>()
+  const [perfil, setPerfil] = useState<Perfil>()
 
   useEffect(() => {
-    get<PerfilMedico>('/medicos/perfil').then(setPerfil)
+    get<Perfil>('/auth/perfil').then(setPerfil)
   }, [])
 
   return (

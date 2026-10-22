@@ -1,5 +1,5 @@
 import logo from '@/assets/images/logo.png'
-import { usePerfilMedico } from '@/hooks/usePerfilMedico'
+import { usePerfil } from '@/hooks/usePerfil'
 
 function saudacao() {
   const hora = new Date().getHours()
@@ -11,7 +11,7 @@ function saudacao() {
 const hoje = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' })
 
 export function InicioPage() {
-  const perfil = usePerfilMedico()
+  const perfil = usePerfil()
 
   return (
     <>

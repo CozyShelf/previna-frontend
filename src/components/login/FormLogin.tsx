@@ -12,7 +12,10 @@ interface TokenResponse {
   token: string
 }
 
-export function FormLoginMedico() {
+// No navegador entram médicos e administradores
+const PERFIS_WEB = ['MEDICO', 'ADMIN']
+
+export function FormLogin() {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
   const [enviando, setEnviando] = useState(false)
@@ -25,8 +28,8 @@ export function FormLoginMedico() {
         login: dados.get('login'),
         senha: dados.get('senha'),
       })
-      if (perfilDoToken(token) !== 'MEDICO') {
-        setErro('Acesso permitido apenas para médicos.')
+      if (!PERFIS_WEB.includes(perfilDoToken(token))) {
+        setErro('Acesso permitido apenas para médicos e administradores.')
         return
       }
       salvarToken(token)

@@ -1,9 +1,9 @@
 import { Avatar } from '@/components/sistema/Avatar'
 import { PageHeader } from '@/components/sistema/PageHeader'
-import { usePerfilMedico } from '@/hooks/usePerfilMedico'
+import { identificacao, usePerfil } from '@/hooks/usePerfil'
 
 export function PerfilPage() {
-  const perfil = usePerfilMedico()
+  const perfil = usePerfil()
 
   if (!perfil) return null
 
@@ -21,7 +21,7 @@ export function PerfilPage() {
           <Avatar nome={perfil.nome} tamanho="lg" />
           <div>
             <p className="text-base font-semibold text-zinc-900">{perfil.nome}</p>
-            <p className="text-zinc-500">{perfil.crm}</p>
+            <p className="text-zinc-500">{identificacao(perfil)}</p>
           </div>
         </div>
 

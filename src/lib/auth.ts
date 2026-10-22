@@ -14,6 +14,12 @@ export function perfilDoToken(token: string) {
   return decodificar(token).perfil
 }
 
+// Perfil de quem está logado, ou undefined sem sessão
+export function perfilDaSessao() {
+  const token = obterToken()
+  return token ? perfilDoToken(token) : undefined
+}
+
 export function salvarToken(token: string) {
   localStorage.setItem(CHAVE_TOKEN, token)
 }

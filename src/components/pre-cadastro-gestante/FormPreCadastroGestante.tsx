@@ -1,14 +1,16 @@
-import { useState, type ChangeEvent, type FocusEvent, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post } from '@/lib/api'
-import { mascararCpf, mascararTelefone } from '@/lib/mascaras'
+import { mascararCpf, mascararTelefone, somenteDigitos } from '@/lib/mascaras'
 import { cpfValido } from '@/lib/validacoes'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 import { Alerta } from '../common/Alerta'
 import { Button } from '../common/Button'
 import { Form } from '../common/Form'
 import { InputGroup } from '../common/InputGroup'
+import { SecaoFormulario } from '../common/SecaoFormulario'
 import type { Credenciais } from './CredenciaisTemporarias'
 
 export interface FormPreCadastroGestanteProps {
@@ -16,14 +18,12 @@ export interface FormPreCadastroGestanteProps {
 }
 
 type Campo = 'nome' | 'cpf' | 'dataNascimento' | 'telefone' | 'email' | 'dum'
-type Erros = Partial<Record<Campo, string>>
 
 const hoje = () => new Date().toISOString().slice(0, 10)
-const somenteDigitos = (valor: FormDataEntryValue | null) => String(valor ?? '').replace(/\D/g, '')
 const dataInvalida = (valor: string) => !/^\d{4}-\d{2}-\d{2}$/.test(valor) || valor < '1900-01-01'
 
 // Mesmas regras do PreCadastroGestanteRequest no backend, com a mensagem do que corrigir
-const VALIDACOES: Record<Campo, (valor: string) => string | undefined> = {
+const VALIDACOES: Validacoes<Campo> = {
   nome: (valor) => (valor.trim() ? undefined : 'Informe o nome completo.'),
   cpf: (valor) => {
     const cpf = somenteDigitos(valor)
@@ -52,43 +52,13 @@ const VALIDACOES: Record<Campo, (valor: string) => string | undefined> = {
   },
 }
 
-const CAMPOS = Object.keys(VALIDACOES) as Campo[]
-
 export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestanteProps) {
   const [erro, setErro] = useState<string>()
-  const [erros, setErros] = useState<Erros>({})
   const [enviando, setEnviando] = useState(false)
-
-  // O erro aparece ao sair do campo (ou ao completá-lo); a partir daí é revalidado a cada tecla
-  function validar(nome: Campo, valor: string, exibir: boolean) {
-    setErros((atuais) =>
-      exibir || nome in atuais ? { ...atuais, [nome]: VALIDACOES[nome](valor) } : atuais,
-    )
-  }
-
-  function campo(nome: Campo, mascara?: (valor: string) => string) {
-    return {
-      name: nome,
-      erro: erros[nome],
-      onChange: (e: ChangeEvent<HTMLInputElement>) => {
-        const input = e.currentTarget
-        if (mascara) input.value = mascara(input.value)
-        validar(nome, input.value, input.value.length === input.maxLength)
-      },
-      onBlur: (e: FocusEvent<HTMLInputElement>) => validar(nome, e.currentTarget.value, true),
-    }
-  }
+  const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function cadastrar(dados: FormData) {
-    const encontrados = Object.fromEntries(
-      CAMPOS.map((nome) => [nome, VALIDACOES[nome](String(dados.get(nome) ?? ''))]),
-    ) as Erros
-    setErros(encontrados)
-    const primeiroInvalido = CAMPOS.find((nome) => encontrados[nome])
-    if (primeiroInvalido) {
-      document.getElementsByName(primeiroInvalido)[0]?.focus()
-      return
-    }
+    if (!validarTodos(dados)) return
 
     setErro(undefined)
     setEnviando(true)
@@ -115,7 +85,10 @@ export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestant
       noValidate
       className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white"
     >
-      <Secao titulo="Identificação" descricao="O CPF será o login temporário da gestante.">
+      <SecaoFormulario
+        titulo="Identificação"
+        descricao="O CPF será o login temporário da gestante."
+      >
         <InputGroup
           labelTxt="Nome completo"
           {...campo('nome')}
@@ -140,9 +113,9 @@ export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestant
           max={hoje()}
           required
         />
-      </Secao>
+      </SecaoFormulario>
 
-      <Secao titulo="Contato">
+      <SecaoFormulario titulo="Contato">
         <InputGroup
           labelTxt="Telefone"
           {...campo('telefone', mascararTelefone)}
@@ -158,9 +131,12 @@ export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestant
           maxLength={150}
           hint="Opcional"
         />
-      </Secao>
+      </SecaoFormulario>
 
-      <Secao titulo="Gestação" descricao="A data provável do parto é calculada a partir da DUM.">
+      <SecaoFormulario
+        titulo="Gestação"
+        descricao="A data provável do parto é calculada a partir da DUM."
+      >
         <InputGroup
           labelTxt="Data da última menstruação (DUM)"
           {...campo('dum')}
@@ -169,7 +145,7 @@ export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestant
           max={hoje()}
           required
         />
-      </Secao>
+      </SecaoFormulario>
 
       <div className="flex items-center justify-end gap-3 rounded-b-lg bg-zinc-50 px-6 py-4">
         {erro && (
@@ -188,24 +164,6 @@ export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestant
         />
       </div>
     </Form>
-  )
-}
-
-interface SecaoProps {
-  titulo: string
-  descricao?: string
-  children: ReactNode
-}
-
-function Secao({ titulo, descricao, children }: SecaoProps) {
-  return (
-    <section className="grid grid-cols-[220px_1fr] gap-8 px-6 py-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="font-semibold text-zinc-900">{titulo}</h2>
-        {descricao && <p className="text-[13px] text-zinc-500">{descricao}</p>}
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5">{children}</div>
-    </section>
   )
 }
 

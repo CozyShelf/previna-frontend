@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { Icone } from '@/components/common/Icone'
-import type { PerfilMedico } from '@/hooks/usePerfilMedico'
+import { identificacao, type Perfil } from '@/hooks/usePerfil'
 import { encerrarSessao } from '@/lib/auth'
 import { Avatar } from './Avatar'
 
@@ -10,7 +10,7 @@ const ITEM_CLASSES =
   'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
 
 export interface MenuPerfilProps {
-  perfil?: PerfilMedico
+  perfil?: Perfil
 }
 
 export function MenuPerfil({ perfil }: MenuPerfilProps) {
@@ -59,7 +59,7 @@ export function MenuPerfil({ perfil }: MenuPerfilProps) {
         >
           <div className="border-b border-zinc-100 px-4 py-3">
             <p className="font-medium text-zinc-900">{perfil?.nome}</p>
-            <p className="text-xs text-zinc-500">{perfil?.crm}</p>
+            <p className="text-xs text-zinc-500">{perfil && identificacao(perfil)}</p>
           </div>
           <div className="p-1">
             <Link

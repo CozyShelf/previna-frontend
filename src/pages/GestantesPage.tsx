@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom'
 import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
 import { Avatar } from '@/components/sistema/Avatar'
+import { ComoFunciona, type Passo } from '@/components/sistema/ComoFunciona'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { SituacaoConta } from '@/components/sistema/SituacaoConta'
 import { get } from '@/lib/api'
 import { formatarData, idadeGestacional } from '@/lib/datas'
 import { mascararCpf, mascararTelefone } from '@/lib/mascaras'
@@ -20,7 +22,7 @@ interface Gestante {
   primeiroAcessoPendente: boolean
 }
 
-const PASSOS = [
+const PASSOS: Passo[] = [
   {
     titulo: 'Informe os dados',
     texto: 'Nome, CPF, data de nascimento, telefone e data da última menstruação.',
@@ -64,7 +66,7 @@ export function GestantesPage() {
         <Alerta mensagem="Não foi possível carregar as gestantes. Recarregue a página para tentar de novo." />
       )}
       {!gestantes && !erro && <p className="text-zinc-500">Carregando gestantes…</p>}
-      {gestantes?.length === 0 && <ComoFunciona />}
+      {gestantes?.length === 0 && <ComoFunciona passos={PASSOS} />}
       {gestantes && gestantes.length > 0 && <TabelaGestantes gestantes={gestantes} />}
     </div>
   )
@@ -105,42 +107,12 @@ function TabelaGestantes({ gestantes }: { gestantes: Gestante[] }) {
                 {formatarData(gestante.dataProvavelParto)}
               </td>
               <td className="px-4 py-3">
-                {gestante.primeiroAcessoPendente ? (
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber-800 ring-1 ring-amber-200">
-                    Aguardando primeiro acesso
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
-                    Ativa
-                  </span>
-                )}
+                <SituacaoConta primeiroAcessoPendente={gestante.primeiroAcessoPendente} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </section>
-  )
-}
-
-// Estado vazio: explica o pré-cadastro enquanto o médico ainda não tem gestantes
-function ComoFunciona() {
-  return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-6">
-      <h2 className="font-semibold text-zinc-900">Como funciona o pré-cadastro</h2>
-      <ol className="mt-5 grid grid-cols-3 gap-8">
-        {PASSOS.map((passo, indice) => (
-          <li key={passo.titulo} className="flex gap-3">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700">
-              {indice + 1}
-            </span>
-            <div className="flex flex-col gap-0.5">
-              <p className="font-medium text-zinc-900">{passo.titulo}</p>
-              <p className="text-zinc-600">{passo.texto}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
     </section>
   )
 }

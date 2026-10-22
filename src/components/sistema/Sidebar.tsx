@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 import { Icone, type NomeIcone } from '@/components/common/Icone'
 import PrevinaLogo from '@/components/common/PrevinaLogo'
+import { perfilDaSessao } from '@/lib/auth'
 
 interface ItemMenu {
   to: string
@@ -9,12 +10,16 @@ interface ItemMenu {
   icone: NomeIcone
 }
 
-const ITENS: ItemMenu[] = [
-  { to: '/', label: 'Início', icone: 'inicio' },
-  { to: '/gestantes', label: 'Gestantes', icone: 'gestantes' },
-]
+const INICIO: ItemMenu = { to: '/', label: 'Início', icone: 'inicio' }
+
+const ITENS: Record<string, ItemMenu[]> = {
+  MEDICO: [INICIO, { to: '/gestantes', label: 'Gestantes', icone: 'gestantes' }],
+  ADMIN: [INICIO, { to: '/empresas', label: 'Empresas parceiras', icone: 'empresas' }],
+}
 
 export function Sidebar() {
+  const itens = ITENS[perfilDaSessao() ?? ''] ?? []
+
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-zinc-200 bg-zinc-100/60">
       <div className="flex h-14 shrink-0 items-center border-b border-zinc-200 px-5">
@@ -22,7 +27,7 @@ export function Sidebar() {
       </div>
 
       <nav aria-label="Menu principal" className="flex flex-col gap-0.5 p-3">
-        {ITENS.map((item) => (
+        {itens.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

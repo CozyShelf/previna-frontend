@@ -4,17 +4,19 @@ import { RotaProtegida } from '@/components/RotaProtegida'
 import type { HandleRota } from '@/components/sistema/Trilha'
 import { AppLayout } from '@/layouts/AppLayout'
 import { SistemaLayout } from '@/layouts/SistemaLayout'
+import { EmpresasPage } from '@/pages/EmpresasPage'
 import { GestantesPage } from '@/pages/GestantesPage'
 import { InicioPage } from '@/pages/InicioPage'
-import { MedicoLoginPage } from '@/pages/MedicoLoginPage'
+import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PerfilPage } from '@/pages/PerfilPage'
+import { PreCadastroEmpresaPage } from '@/pages/PreCadastroEmpresaPage'
 import { PreCadastroGestantePage } from '@/pages/PreCadastroGestantePage'
 
 const titulo = (texto: string): HandleRota => ({ titulo: texto })
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <MedicoLoginPage /> },
+  { path: '/login', element: <LoginPage /> },
   {
     element: <RotaProtegida />,
     children: [
@@ -32,6 +34,18 @@ export const router = createBrowserRouter([
               {
                 path: 'pre-cadastro',
                 element: <PreCadastroGestantePage />,
+                handle: titulo('Pré-cadastro'),
+              },
+            ],
+          },
+          {
+            path: 'empresas',
+            handle: titulo('Empresas parceiras'),
+            children: [
+              { index: true, element: <EmpresasPage /> },
+              {
+                path: 'pre-cadastro',
+                element: <PreCadastroEmpresaPage />,
                 handle: titulo('Pré-cadastro'),
               },
             ],

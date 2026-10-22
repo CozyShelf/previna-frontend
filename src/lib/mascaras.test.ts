@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mascararCpf, mascararTelefone } from '@/lib/mascaras'
+import { mascararCnpj, mascararCpf, mascararTelefone } from '@/lib/mascaras'
 
 describe('mascararCpf', () => {
   it.each([
@@ -26,5 +26,19 @@ describe('mascararTelefone', () => {
     ['(11) 98765-43219', '(11) 98765-4321'],
   ])('%s -> %s', (valor, esperado) => {
     expect(mascararTelefone(valor)).toBe(esperado)
+  })
+})
+
+describe('mascararCnpj', () => {
+  it.each([
+    ['12', '12'],
+    ['123', '12.3'],
+    ['123456', '12.345.6'],
+    ['123456780', '12.345.678/0'],
+    ['12345678000195', '12.345.678/0001-95'],
+    ['12.345.678/0001-95999', '12.345.678/0001-95'],
+    ['abc', ''],
+  ])('%s -> %s', (valor, esperado) => {
+    expect(mascararCnpj(valor)).toBe(esperado)
   })
 })
