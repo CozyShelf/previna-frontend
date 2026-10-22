@@ -2,8 +2,12 @@
 
 @theme {
   --color-previna: #ff5555;
-  --color-previna-light: #fc6c6c;
-  --font-sans: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+  --color-previna-50: #fff1f1;
+  --color-previna-100: #ffe0e0;
+  --color-previna-600: #d93a45;
+  --color-previna-700: #b82e39;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-brand: 'Raleway', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -12,6 +16,7 @@
   }
 
   body {
-    @apply bg-white text-slate-900 antialiased;
+    @apply bg-white text-sm text-zinc-900 antialiased;
+    font-variant-numeric: tabular-nums;
   }
 }

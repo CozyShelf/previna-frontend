@@ -1,11 +1,11 @@
 export interface FooterProps {
-    text?: string;
+  text?: string
 }
 
 export function Footer({ text }: FooterProps) {
-    return (
-        <footer className="border-t border-slate-200 px-4 py-6 text-center text-sm text-slate-500 sm:px-6">
-            {text || "Previna — acompanhamento de pré-natal"}
-        </footer>
-    )
+  return (
+    <footer className="border-t border-zinc-200 px-6 py-4 text-center text-xs text-zinc-500">
+      {text || 'Previna — acompanhamento de pré-natal'}
+    </footer>
+  )
 }
