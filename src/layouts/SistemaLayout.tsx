@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { MenuPerfil } from '@/components/sistema/MenuPerfil'
 import { Sidebar } from '@/components/sistema/Sidebar'
 import { Trilha } from '@/components/sistema/Trilha'
-import type { PerfilMedico } from '@/hooks/usePerfilMedico'
+import type { ContextoPerfil, Perfil } from '@/hooks/usePerfil'
 import { get } from '@/lib/api'
 
 export function SistemaLayout() {
-  const [perfil, setPerfil] = useState<PerfilMedico>()
+  const [perfil, setPerfil] = useState<Perfil>()
 
-  useEffect(() => {
-    get<PerfilMedico>('/medicos/perfil').then(setPerfil)
+  const recarregarPerfil = useCallback(() => {
+    get<Perfil>('/auth/perfil').then(setPerfil)
   }, [])
+
+  useEffect(recarregarPerfil, [recarregarPerfil])
 
   return (
     <div className="flex h-dvh overflow-hidden">
@@ -26,7 +28,7 @@ export function SistemaLayout() {
 
         <main className="relative flex-1 overflow-y-auto bg-zinc-50">
           <div className="mx-auto max-w-5xl px-8 py-8">
-            <Outlet context={perfil} />
+            <Outlet context={{ perfil, recarregarPerfil } satisfies ContextoPerfil} />
           </div>
         </main>
       </div>

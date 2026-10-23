@@ -12,7 +12,10 @@ interface TokenResponse {
   token: string
 }
 
-export function FormLoginMedico() {
+// Gestantes usam o app no celular; no navegador entram médicos, administradores e empresas parceiras
+const PERFIS_WEB = ['MEDICO', 'ADMIN', 'EMPRESA_PARCEIRA']
+
+export function FormLogin() {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
   const [enviando, setEnviando] = useState(false)
@@ -25,11 +28,12 @@ export function FormLoginMedico() {
         login: dados.get('login'),
         senha: dados.get('senha'),
       })
-      if (perfilDoToken(token) !== 'MEDICO') {
-        setErro('Acesso permitido apenas para médicos.')
+      if (!PERFIS_WEB.includes(perfilDoToken(token))) {
+        setErro('Gestantes acessam o Previna pelo aplicativo no celular.')
         return
       }
       salvarToken(token)
+      // Com a senha temporária, a RotaProtegida leva ao primeiro acesso
       navigate('/', { replace: true })
     } catch (e) {
       setErro(

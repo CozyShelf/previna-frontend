@@ -1,27 +1,39 @@
+import { FormPerfilEmpresa } from '@/components/perfil-empresa/FormPerfilEmpresa'
 import { Avatar } from '@/components/sistema/Avatar'
 import { PageHeader } from '@/components/sistema/PageHeader'
-import { usePerfilMedico } from '@/hooks/usePerfilMedico'
+import { identificacao, imagemDoPerfil, usePerfil, useRecarregarPerfil } from '@/hooks/usePerfil'
+import { perfilDaSessao } from '@/lib/auth'
 
 export function PerfilPage() {
-  const perfil = usePerfilMedico()
+  const perfil = usePerfil()
+  const recarregarPerfil = useRecarregarPerfil()
+  // Por enquanto só a empresa parceira edita os próprios dados pelo web
+  const editavel = perfilDaSessao() === 'EMPRESA_PARCEIRA'
 
   if (!perfil) return null
 
   const campos = [
-    { label: 'E-mail', valor: perfil.email ?? 'Não informado' },
+    ...(editavel ? [] : [{ label: 'E-mail', valor: perfil.email ?? 'Não informado' }]),
     { label: 'Login', valor: perfil.login },
   ]
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader titulo="Meu perfil" descricao="Dados da sua conta no Previna." />
+      <PageHeader
+        titulo="Meu perfil"
+        descricao={
+          editavel
+            ? 'Dados da sua conta no Previna. Mantenha o contato e os dados da empresa em dia.'
+            : 'Dados da sua conta no Previna.'
+        }
+      />
 
       <section className="rounded-lg border border-zinc-200 bg-white">
         <div className="flex items-center gap-4 border-b border-zinc-200 px-6 py-5">
-          <Avatar nome={perfil.nome} tamanho="lg" />
+          <Avatar nome={perfil.nome} imagem={imagemDoPerfil(perfil)} tamanho="lg" />
           <div>
             <p className="text-base font-semibold text-zinc-900">{perfil.nome}</p>
-            <p className="text-zinc-500">{perfil.crm}</p>
+            <p className="text-zinc-500">{identificacao(perfil)}</p>
           </div>
         </div>
 
@@ -34,6 +46,8 @@ export function PerfilPage() {
           ))}
         </dl>
       </section>
+
+      {editavel && <FormPerfilEmpresa onSalvo={recarregarPerfil} />}
     </div>
   )
 }

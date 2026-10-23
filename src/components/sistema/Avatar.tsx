@@ -5,6 +5,8 @@ const TAMANHOS = {
 
 export interface AvatarProps {
   nome?: string
+  // Imagem (ex.: logo da empresa parceira) no lugar das iniciais
+  imagem?: string
   tamanho?: keyof typeof TAMANHOS
 }
 
@@ -13,7 +15,18 @@ function iniciais(nome: string) {
   return `${partes[0]?.charAt(0) ?? ''}${partes.length > 1 ? (partes.at(-1)?.charAt(0) ?? '') : ''}`
 }
 
-export function Avatar({ nome, tamanho = 'sm' }: AvatarProps) {
+export function Avatar({ nome, imagem, tamanho = 'sm' }: AvatarProps) {
+  if (imagem) {
+    return (
+      <img
+        src={imagem}
+        alt=""
+        aria-hidden="true"
+        className={`shrink-0 rounded-full bg-white object-contain ring-1 ring-zinc-200 ${TAMANHOS[tamanho]}`}
+      />
+    )
+  }
+
   return (
     <span
       aria-hidden="true"
