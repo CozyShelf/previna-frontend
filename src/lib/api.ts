@@ -47,7 +47,8 @@ export function get<T>(caminho: string) {
 }
 
 export function post<T>(caminho: string, corpo: unknown) {
-  return requisicao<T>(caminho, { method: 'POST', body: JSON.stringify(corpo) })
+  const body = corpo instanceof FormData ? corpo : JSON.stringify(corpo)
+  return requisicao<T>(caminho, { method: 'POST', body })
 }
 
 export function put<T>(caminho: string, corpo: unknown) {

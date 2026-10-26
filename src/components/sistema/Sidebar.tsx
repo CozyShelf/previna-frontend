@@ -19,7 +19,12 @@ const ITENS: Record<string, ItemMenu[]> = {
     { to: '/medicos', label: 'Médicos', icone: 'medicos' },
     { to: '/empresas', label: 'Empresas parceiras', icone: 'empresas' },
   ],
-  EMPRESA_PARCEIRA: [INICIO],
+  EMPRESA_PARCEIRA: [
+    INICIO,
+    { to: '/produtos', label: 'Produtos', icone: 'produto' },
+    { to: '/promocoes', label: 'Promoções', icone: 'promocao' },
+    { to: '/cupons', label: 'Cupons', icone: 'cupom' },
+  ],
 }
 
 export function Sidebar() {

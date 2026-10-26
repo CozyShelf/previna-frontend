@@ -1,5 +1,9 @@
 // aaaa-mm-dd -> dd/mm/aaaa
 export const formatarData = (data: string) => data.split('-').reverse().join('/')
+
+// sv-SE formata a data local como aaaa-mm-dd, o formato do input de data
+export const hoje = () => new Date().toLocaleDateString('sv-SE')
+
 const plural = (n: number, singular: string, plural: string) =>
   `${n} ${n === 1 ? singular : plural}`
 
