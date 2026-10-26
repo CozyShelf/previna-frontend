@@ -4,6 +4,9 @@ import { RotaProtegida } from '@/components/RotaProtegida'
 import type { HandleRota } from '@/components/sistema/Trilha'
 import { AppLayout } from '@/layouts/AppLayout'
 import { SistemaLayout } from '@/layouts/SistemaLayout'
+import { CadastroCupomPage } from '@/pages/CadastroCupomPage'
+import { CadastroPromocaoPage } from '@/pages/CadastroPromocaoPage'
+import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
 import { GestantesPage } from '@/pages/GestantesPage'
 import { InicioPage } from '@/pages/InicioPage'
@@ -15,6 +18,9 @@ import { PerfilPage } from '@/pages/PerfilPage'
 import { PreCadastroEmpresaPage } from '@/pages/PreCadastroEmpresaPage'
 import { PreCadastroGestantePage } from '@/pages/PreCadastroGestantePage'
 import { PrimeiroAcessoEmpresaPage } from '@/pages/PrimeiroAcessoEmpresaPage'
+import { ProdutoPage } from '@/pages/ProdutoPage'
+import { ProdutosPage } from '@/pages/ProdutosPage'
+import { PromocoesPage } from '@/pages/PromocoesPage'
 import { TutorialEmpresaPage } from '@/pages/TutorialEmpresaPage'
 
 const titulo = (texto: string): HandleRota => ({ titulo: texto })
@@ -61,6 +67,31 @@ export const router = createBrowserRouter([
               { index: true, element: <MedicosPage /> },
               { path: 'novo', element: <MedicoPage />, handle: titulo('Cadastro') },
               { path: ':id', element: <MedicoPage />, handle: titulo('Edição') },
+            ],
+          },
+          {
+            path: 'produtos',
+            handle: titulo('Produtos'),
+            children: [
+              { index: true, element: <ProdutosPage /> },
+              { path: 'novo', element: <ProdutoPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <ProdutoPage />, handle: titulo('Edição') },
+            ],
+          },
+          {
+            path: 'promocoes',
+            handle: titulo('Promoções'),
+            children: [
+              { index: true, element: <PromocoesPage /> },
+              { path: 'novo', element: <CadastroPromocaoPage />, handle: titulo('Cadastro') },
+            ],
+          },
+          {
+            path: 'cupons',
+            handle: titulo('Cupons'),
+            children: [
+              { index: true, element: <CuponsPage /> },
+              { path: 'novo', element: <CadastroCupomPage />, handle: titulo('Cadastro') },
             ],
           },
           { path: 'perfil', element: <PerfilPage />, handle: titulo('Meu perfil') },

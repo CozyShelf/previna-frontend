@@ -18,7 +18,8 @@ export interface FiltroListagem {
 
 export interface ListagemProps<T> {
   caminho: string
-  descricaoBusca: string
+  // Sem ela, a listagem não tem campo de busca
+  descricaoBusca?: string
   filtros: FiltroListagem[]
   // Exibido quando ainda não há nada cadastrado (sem busca nem filtro)
   vazio: ReactNode
@@ -89,21 +90,23 @@ export function Listagem<T>({
   return (
     <div className="flex flex-col gap-4">
       <div role="search" className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-64 flex-1">
-          <Icone
-            nome="buscar"
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400"
-          />
-          <input
-            type="search"
-            aria-label="Buscar"
-            placeholder={descricaoBusca}
-            value={busca}
-            maxLength={100}
-            onChange={(e) => buscar(e.currentTarget.value)}
-            className={`${CLASSES_CAMPO} w-full pr-3 pl-9 placeholder:text-zinc-400`}
-          />
-        </div>
+        {descricaoBusca && (
+          <div className="relative min-w-64 flex-1">
+            <Icone
+              nome="buscar"
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400"
+            />
+            <input
+              type="search"
+              aria-label="Buscar"
+              placeholder={descricaoBusca}
+              value={busca}
+              maxLength={100}
+              onChange={(e) => buscar(e.currentTarget.value)}
+              className={`${CLASSES_CAMPO} w-full pr-3 pl-9 placeholder:text-zinc-400`}
+            />
+          </div>
+        )}
         {filtros.map((filtro) => (
           <select
             key={filtro.nome}

@@ -6,18 +6,20 @@ export type Validacoes<C extends string> = Record<
   (valor: string, dados: FormData) => string | undefined
 >
 
+type Elemento = HTMLInputElement | HTMLSelectElement
+
 export interface PropsCampo {
   name: string
   erro?: string
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void
-  onBlur: (e: FocusEvent<HTMLInputElement>) => void
+  onChange: (e: ChangeEvent<Elemento>) => void
+  onBlur: (e: FocusEvent<Elemento>) => void
 }
 
 // O erro aparece ao sair do campo (ou ao completá-lo); a partir daí é revalidado a cada tecla
 export function useValidacao<C extends string>(validacoes: Validacoes<C>) {
   const [erros, setErros] = useState<Partial<Record<C, string>>>({})
 
-  function validar(input: HTMLInputElement, exibir: boolean) {
+  function validar(input: Elemento, exibir: boolean) {
     const nome = input.name as C
     const erro = validacoes[nome](input.value, new FormData(input.form ?? undefined))
     setErros((atuais) => (exibir || nome in atuais ? { ...atuais, [nome]: erro } : atuais))
@@ -27,13 +29,18 @@ export function useValidacao<C extends string>(validacoes: Validacoes<C>) {
     return {
       name: nome,
       erro: erros[nome],
-      onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      onChange: (e: ChangeEvent<Elemento>) => {
         const input = e.currentTarget
         if (mascara) input.value = mascara(input.value)
-        // Arquivo escolhido já mostra o erro; texto só quando completa o tamanho máximo
-        validar(input, input.type === 'file' || input.value.length === input.maxLength)
+        // Arquivo ou opção escolhida já mostra o erro; texto só quando completa o tamanho máximo
+        validar(
+          input,
+          input instanceof HTMLSelectElement ||
+            input.type === 'file' ||
+            input.value.length === input.maxLength,
+        )
       },
-      onBlur: (e: FocusEvent<HTMLInputElement>) => validar(e.currentTarget, true),
+      onBlur: (e: FocusEvent<Elemento>) => validar(e.currentTarget, true),
     }
   }
 

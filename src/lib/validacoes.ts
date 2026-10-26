@@ -1,4 +1,4 @@
-import { somenteDigitos } from '@/lib/mascaras'
+import { decimalDaApi, somenteDigitos } from '@/lib/mascaras'
 
 // Mesma regra do @CPF do backend: 11 dígitos, não todos iguais e os dois verificadores corretos
 export function cpfValido(cpf: string) {
@@ -45,6 +45,14 @@ export function erroImagem(arquivo: FormDataEntryValue | null) {
   if (!(arquivo instanceof File) || !arquivo.size) return
   if (!TIPOS_IMAGEM.includes(arquivo.type)) return 'Escolha uma imagem PNG, JPG ou WebP.'
   if (arquivo.size > TAMANHO_MAXIMO_IMAGEM) return 'A imagem deve ter no máximo 2 MB.'
+}
+
+// Mesma regra do backend para desconto percentual (promoção e cupom)
+export function erroDesconto(valor: string) {
+  if (!valor.trim()) return 'Informe o desconto.'
+  const desconto = Number(decimalDaApi(valor))
+  if (!/^\d{1,3}([.,]\d{1,2})?$/.test(valor.trim()) || desconto <= 0 || desconto > 100)
+    return 'Informe um percentual maior que 0 e até 100, como 15 ou 12,5.'
 }
 
 // Regras de formato do backend; quem chama decide se o campo vazio é erro

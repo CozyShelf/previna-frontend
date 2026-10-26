@@ -15,19 +15,19 @@ const ETAPAS: Etapa[] = [
   {
     titulo: 'Cadastre seus produtos',
     descricao:
-      'Inclua os produtos da sua empresa com nome, descrição, categoria, preço e foto. Eles ficam visíveis para as gestantes do programa.',
+      'Inclua os produtos da sua empresa com nome, descrição, categoria (fraldas, roupas ou remédios), preço sem desconto e foto. Eles ficam visíveis para as gestantes do programa, e você pode editá-los depois.',
     icone: 'produto',
   },
   {
     titulo: 'Crie promoções',
     descricao:
-      'Escolha os produtos participantes, defina o desconto e o período em que a promoção vale.',
+      'Escolha uma categoria, defina o desconto e o período em que a promoção vale. Ela alcança todos os seus produtos dessa categoria.',
     icone: 'promocao',
   },
   {
     titulo: 'Ofereça cupons',
     descricao:
-      'Crie cupons para um produto ou uma promoção, com a quantidade disponível, a validade e quantos pontos a gestante precisa para resgatar.',
+      'Crie cupons para um produto específico, com o desconto, a validade e quantos pontos a gestante precisa para resgatar. Depois, ative ou desative cada cupom quando quiser.',
     icone: 'cupom',
   },
   {
