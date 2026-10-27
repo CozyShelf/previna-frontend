@@ -8,6 +8,7 @@ import { CadastroCupomPage } from '@/pages/CadastroCupomPage'
 import { CadastroPromocaoPage } from '@/pages/CadastroPromocaoPage'
 import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
+import { CadastroAgendamentoPage } from '@/pages/CadastroAgendamentoPage'
 import { GestantePage } from '@/pages/GestantePage'
 import { GestantesPage } from '@/pages/GestantesPage'
 import { InicioPage } from '@/pages/InicioPage'
@@ -48,6 +49,11 @@ export const router = createBrowserRouter([
                 handle: titulo('Pré-cadastro'),
               },
               { path: ':id', element: <GestantePage />, handle: titulo('Gestante') },
+              {
+                path: ':id/agendamentos/novo',
+                element: <CadastroAgendamentoPage />,
+                handle: titulo('Novo exame ou consulta'),
+              },
             ],
           },
           {
