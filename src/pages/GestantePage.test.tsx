@@ -83,9 +83,9 @@ function responder(agendamentos: unknown[], status = 200) {
   })
 }
 
-function renderizar() {
+function renderizar(state?: { mensagem: string }) {
   render(
-    <MemoryRouter initialEntries={['/gestantes/7']}>
+    <MemoryRouter initialEntries={[{ pathname: '/gestantes/7', state }]}>
       <Routes>
         <Route path="/gestantes/:id" element={<GestantePage />} />
       </Routes>
@@ -178,5 +178,15 @@ describe('GestantePage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Este exame ou consulta já foi resolvido. Recarregue a página.',
     )
+  })
+
+  // O formulário de cadastro navega para cá com a confirmação no state, como as outras listas do sistema
+  it('mostra a confirmação deixada pelo formulário de cadastro', async () => {
+    responder(AGENDAMENTOS)
+    renderizar({ mensagem: 'Cadastro de Hemograma completo realizado com sucesso.' })
+
+    expect(
+      await screen.findByText('Cadastro de Hemograma completo realizado com sucesso.'),
+    ).toBeInTheDocument()
   })
 })

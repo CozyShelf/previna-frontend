@@ -70,7 +70,8 @@ export function FormAgendamento() {
         ...(observacao && { observacao }),
       })
       navigate(`/gestantes/${id}`, {
-        state: { mensagem: `${criado.tipo ?? escolhido?.nome} cadastrado com sucesso.` },
+        // "Cadastro de X realizado" concorda com qualquer tipo; "X cadastrado" erraria o gênero de "Consulta"
+        state: { mensagem: `Cadastro de ${criado.tipo ?? escolhido?.nome} realizado com sucesso.` },
       })
     } catch (e) {
       setErro(mensagemDeErro(e))

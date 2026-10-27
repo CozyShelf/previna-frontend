@@ -74,7 +74,7 @@ describe('FormAgendamento', () => {
       observacao: 'Jejum de 8h',
     })
     expect(
-      await screen.findByText('Hemograma completo cadastrado com sucesso.'),
+      await screen.findByText('Cadastro de Hemograma completo realizado com sucesso.'),
     ).toBeInTheDocument()
   })
 

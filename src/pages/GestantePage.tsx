@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { ListaAgendamentos } from '@/components/agendamento/ListaAgendamentos'
 import type { Agendamento, StatusAgendamento } from '@/components/agendamento/statusAgendamento'
@@ -12,6 +12,8 @@ import BUTTON_CLASSES from '@/types/ButtonClasses'
 
 export function GestantePage() {
   const { id } = useParams()
+  // Confirmação deixada pelo formulário de cadastro ao voltar para cá
+  const cadastrado = (useLocation().state as { mensagem?: string } | null)?.mensagem
   // O id vai no caminho da API: só número, para a URL não apontar outro endpoint (ex.: "..%2F")
   const idValido = id !== undefined && /^\d+$/.test(id)
   const [gestante, setGestante] = useState<Gestante>()
@@ -89,6 +91,11 @@ export function GestantePage() {
 
       {gestante && <DadosGestante gestante={gestante} />}
       {erroAcao && <Alerta mensagem={erroAcao} />}
+      {cadastrado && !aviso && (
+        <p role="status" className="text-sm font-medium text-emerald-700">
+          {cadastrado}
+        </p>
+      )}
       {aviso && (
         <p
           role="status"
