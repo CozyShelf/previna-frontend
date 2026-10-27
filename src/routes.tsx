@@ -8,6 +8,7 @@ import { CadastroCupomPage } from '@/pages/CadastroCupomPage'
 import { CadastroPromocaoPage } from '@/pages/CadastroPromocaoPage'
 import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
+import { GestantePage } from '@/pages/GestantePage'
 import { GestantesPage } from '@/pages/GestantesPage'
 import { InicioPage } from '@/pages/InicioPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
                 element: <PreCadastroGestantePage />,
                 handle: titulo('Pré-cadastro'),
               },
+              { path: ':id', element: <GestantePage />, handle: titulo('Gestante') },
             ],
           },
           {

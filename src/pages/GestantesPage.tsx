@@ -110,7 +110,12 @@ function TabelaGestantes({ gestantes, comMedico }: TabelaGestantesProps) {
                 <div className="flex items-center gap-3">
                   <Avatar nome={gestante.nome} />
                   <div>
-                    <p className="font-medium text-zinc-900">{gestante.nome}</p>
+                    <Link
+                      to={`/gestantes/${gestante.id}`}
+                      className="font-medium text-zinc-900 hover:text-previna-700 hover:underline"
+                    >
+                      {gestante.nome}
+                    </Link>
                     <p className="text-xs text-zinc-500 tabular-nums">
                       CPF {mascararCpf(gestante.cpf)}
                     </p>
