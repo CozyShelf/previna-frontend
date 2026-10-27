@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { ListaAgendamentos } from './ListaAgendamentos'
 import type { Agendamento } from './statusAgendamento'
@@ -34,7 +34,7 @@ const AGENDAMENTOS: Agendamento[] = [
 
 describe('ListaAgendamentos', () => {
   it('agrupa por status com os pendentes primeiro', () => {
-    render(<ListaAgendamentos agendamentos={AGENDAMENTOS} />)
+    render(<ListaAgendamentos agendamentos={AGENDAMENTOS} onResolver={vi.fn()} />)
 
     const grupos = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
     expect(grupos).toEqual(['Pendentes', 'Realizados', 'Não compareceram'])
@@ -43,7 +43,12 @@ describe('ListaAgendamentos', () => {
   })
 
   it('não mostra um grupo vazio', () => {
-    render(<ListaAgendamentos agendamentos={AGENDAMENTOS.filter((a) => a.status !== 'NAO_COMPARECEU')} />)
+    render(
+      <ListaAgendamentos
+        agendamentos={AGENDAMENTOS.filter((a) => a.status !== 'NAO_COMPARECEU')}
+        onResolver={vi.fn()}
+      />,
+    )
 
     expect(screen.queryByText(/não compareceram/i)).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Pendentes' })).toBeInTheDocument()

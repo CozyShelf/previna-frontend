@@ -1,4 +1,5 @@
 import { formatarData } from '@/lib/datas'
+import { Button } from '../common/Button'
 import { SeloStatus } from './SeloStatus'
 import { TITULO_GRUPO, type Agendamento, type StatusAgendamento } from './statusAgendamento'
 
@@ -7,9 +8,16 @@ const GRUPOS: StatusAgendamento[] = ['AGENDADO', 'REALIZADO', 'NAO_COMPARECEU']
 
 export interface ListaAgendamentosProps {
   agendamentos: Agendamento[]
+  onResolver: (id: number, status: Exclude<StatusAgendamento, 'AGENDADO'>) => void
+  // Id do item com o PUT em voo: desabilita os dois botões da linha
+  resolvendo?: number
 }
 
-export function ListaAgendamentos({ agendamentos }: ListaAgendamentosProps) {
+export function ListaAgendamentos({
+  agendamentos,
+  onResolver,
+  resolvendo,
+}: ListaAgendamentosProps) {
   return (
     <div className="flex flex-col gap-6">
       {GRUPOS.map((grupo) => {
@@ -42,6 +50,23 @@ export function ListaAgendamentos({ agendamentos }: ListaAgendamentosProps) {
                     {formatarData(agendamento.dataPrevista)}
                   </p>
                   <SeloStatus status={agendamento.status} />
+                  {/* Só o pendente aceita desfecho: o que já foi resolvido não volta atrás por aqui */}
+                  {agendamento.status === 'AGENDADO' && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        label="Confirmar realização"
+                        style="primary"
+                        disabled={resolvendo === agendamento.id}
+                        onClick={() => onResolver(agendamento.id, 'REALIZADO')}
+                      />
+                      <Button
+                        label="Não compareceu"
+                        style="secondary"
+                        disabled={resolvendo === agendamento.id}
+                        onClick={() => onResolver(agendamento.id, 'NAO_COMPARECEU')}
+                      />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

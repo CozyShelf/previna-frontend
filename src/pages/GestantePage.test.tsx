@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -28,6 +29,49 @@ const AGENDAMENTOS = [
     status: 'AGENDADO',
   },
 ]
+
+const PENDENTE_E_REALIZADO = [
+  {
+    id: 12,
+    tipo: 'Hemograma completo',
+    categoria: 'EXAME',
+    pontosBase: 25,
+    dataPrevista: '2026-11-10',
+    status: 'AGENDADO',
+  },
+  {
+    id: 20,
+    tipo: 'Consulta puerperal',
+    categoria: 'CONSULTA',
+    pontosBase: 50,
+    dataPrevista: '2026-10-01',
+    status: 'REALIZADO',
+    dataConfirmacao: '2026-10-01T10:00:00',
+  },
+]
+
+// GET devolve a lista; o PUT devolve o item resolvido, no formato de cada rota
+function responderComAcoes(statusDoPut = 200) {
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+    const caminho = String(url)
+    if (init?.method === 'PUT') {
+      if (statusDoPut !== 200) return new Response('{}', { status: statusDoPut })
+      const resolvido = { ...PENDENTE_E_REALIZADO[0] }
+      return caminho.endsWith('/confirmar')
+        ? new Response(
+            JSON.stringify({
+              agendamento: { ...resolvido, status: 'REALIZADO' },
+              pontosCreditados: 25,
+              saldoPontos: 125,
+            }),
+          )
+        : new Response(JSON.stringify({ ...resolvido, status: 'NAO_COMPARECEU' }))
+    }
+    return caminho.endsWith('/agendamentos')
+      ? new Response(JSON.stringify(PENDENTE_E_REALIZADO))
+      : new Response(JSON.stringify(GESTANTE))
+  })
+}
 
 // A página faz duas chamadas: os dados da gestante e a lista de agendamentos
 function responder(agendamentos: unknown[], status = 200) {
@@ -81,6 +125,58 @@ describe('GestantePage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Não foi possível carregar a gestante. Recarregue a página para tentar de novo.',
+    )
+  })
+
+  it('confirma a realização e move o item para os realizados', async () => {
+    const fetch = responderComAcoes()
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /confirmar realização/i }))
+
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(envio?.[0]).toMatch(/\/agendamentos\/12\/confirmar$/)
+    expect(
+      await screen.findByText(/presença confirmada e 25 pontos creditados/i),
+    ).toBeInTheDocument()
+
+    const realizados = screen.getByRole('region', { name: 'Realizados' })
+    expect(within(realizados).getByText('Hemograma completo')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Pendentes' })).not.toBeInTheDocument()
+  })
+
+  it('registra o não comparecimento sem falar em pontos', async () => {
+    const fetch = responderComAcoes()
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /não compareceu/i }))
+
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(envio?.[0]).toMatch(/\/agendamentos\/12\/nao-compareceu$/)
+    const aviso = await screen.findByRole('status')
+    expect(aviso).toHaveTextContent('Não comparecimento registrado.')
+    expect(aviso.textContent).not.toMatch(/pontos/i)
+  })
+
+  it('só oferece as ações nos pendentes', async () => {
+    responderComAcoes()
+    renderizar()
+
+    const realizados = await screen.findByRole('region', { name: 'Realizados' })
+    expect(
+      within(realizados).queryByRole('button', { name: /confirmar realização/i }),
+    ).not.toBeInTheDocument()
+    expect(within(realizados).queryByRole('button', { name: /não compareceu/i })).not.toBeInTheDocument()
+  })
+
+  it('avisa quando o item já foi resolvido em outra aba', async () => {
+    responderComAcoes(409)
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /confirmar realização/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este exame ou consulta já foi resolvido. Recarregue a página.',
     )
   })
 })
