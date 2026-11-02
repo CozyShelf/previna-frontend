@@ -1,4 +1,4 @@
-import { formatarData } from '@/lib/datas'
+import { formatarData, hoje } from '@/lib/datas'
 import { Button } from '../common/Button'
 import { SeloStatus } from './SeloStatus'
 import { TITULO_GRUPO, type Agendamento, type StatusAgendamento } from './statusAgendamento'
@@ -50,8 +50,9 @@ export function ListaAgendamentos({
                     {formatarData(agendamento.dataPrevista)}
                   </p>
                   <SeloStatus status={agendamento.status} />
-                  {/* Só o pendente aceita desfecho: o que já foi resolvido não volta atrás por aqui */}
-                  {agendamento.status === 'AGENDADO' && (
+                  {/* Só o pendente aceita desfecho, e só a partir do dia marcado: antes disso não há
+                      o que confirmar. Comparação de texto porque as duas datas são aaaa-mm-dd. */}
+                  {agendamento.status === 'AGENDADO' && agendamento.dataPrevista <= hoje() && (
                     <div className="flex items-center gap-2">
                       <Button
                         label="Confirmar realização"

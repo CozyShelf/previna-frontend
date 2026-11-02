@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { hoje } from '@/lib/datas'
 import { GestantePage } from './GestantePage'
 
 const GESTANTE = {
@@ -36,7 +37,8 @@ const PENDENTE_E_REALIZADO = [
     tipo: 'Hemograma completo',
     categoria: 'EXAME',
     pontosBase: 25,
-    dataPrevista: '2026-11-10',
+    // Hoje, e não uma data fixa: os botões de desfecho só aparecem a partir do dia previsto
+    dataPrevista: hoje(),
     status: 'AGENDADO',
   },
   {
@@ -102,7 +104,9 @@ describe('GestantePage', () => {
     responder(AGENDAMENTOS)
     renderizar()
 
-    expect(await screen.findByRole('heading', { name: 'Maria Teste', level: 1 })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Maria Teste', level: 1 }),
+    ).toBeInTheDocument()
     expect(screen.getByText('529.982.247-25')).toBeInTheDocument()
     expect(screen.getByText('25')).toBeInTheDocument()
     expect(await screen.findByText('Hemograma completo')).toBeInTheDocument()
@@ -113,10 +117,9 @@ describe('GestantePage', () => {
     renderizar()
 
     expect(await screen.findByText(/nenhum exame ou consulta cadastrado/i)).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /cadastrar exame ou consulta/i })[0]).toHaveAttribute(
-      'href',
-      '/gestantes/7/agendamentos/novo',
-    )
+    expect(
+      screen.getAllByRole('link', { name: /cadastrar exame ou consulta/i })[0],
+    ).toHaveAttribute('href', '/gestantes/7/agendamentos/novo')
   })
 
   it('avisa sem quebrar quando a API falha', async () => {
@@ -166,7 +169,24 @@ describe('GestantePage', () => {
     expect(
       within(realizados).queryByRole('button', { name: /confirmar realização/i }),
     ).not.toBeInTheDocument()
-    expect(within(realizados).queryByRole('button', { name: /não compareceu/i })).not.toBeInTheDocument()
+    expect(
+      within(realizados).queryByRole('button', { name: /não compareceu/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  // O desfecho só vale a partir do dia marcado; antes disso o médico não tem o que confirmar
+  it('não oferece as ações antes da data prevista', async () => {
+    responder([{ ...AGENDAMENTOS[0], dataPrevista: '2099-01-01' }])
+    renderizar()
+
+    const pendentes = await screen.findByRole('region', { name: 'Pendentes' })
+    expect(within(pendentes).getByText('Hemograma completo')).toBeInTheDocument()
+    expect(
+      within(pendentes).queryByRole('button', { name: /confirmar realização/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(pendentes).queryByRole('button', { name: /não compareceu/i }),
+    ).not.toBeInTheDocument()
   })
 
   it('avisa quando o item já foi resolvido em outra aba', async () => {
