@@ -23,6 +23,8 @@ import { PrimeiroAcessoEmpresaPage } from '@/pages/PrimeiroAcessoEmpresaPage'
 import { ProdutoPage } from '@/pages/ProdutoPage'
 import { ProdutosPage } from '@/pages/ProdutosPage'
 import { PromocoesPage } from '@/pages/PromocoesPage'
+import { TipoAtendimentoPage } from '@/pages/TipoAtendimentoPage'
+import { TiposAtendimentoPage } from '@/pages/TiposAtendimentoPage'
 import { TutorialEmpresaPage } from '@/pages/TutorialEmpresaPage'
 
 const titulo = (texto: string): HandleRota => ({ titulo: texto })
@@ -54,6 +56,15 @@ export const router = createBrowserRouter([
                 element: <CadastroAgendamentoPage />,
                 handle: titulo('Novo exame ou consulta'),
               },
+            ],
+          },
+          {
+            path: 'tipos-atendimento',
+            handle: titulo('Tipos de atendimento'),
+            children: [
+              { index: true, element: <TiposAtendimentoPage /> },
+              { path: 'novo', element: <TipoAtendimentoPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <TipoAtendimentoPage />, handle: titulo('Edição') },
             ],
           },
           {

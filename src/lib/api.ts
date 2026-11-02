@@ -55,3 +55,7 @@ export function put<T>(caminho: string, corpo: unknown) {
   const body = corpo instanceof FormData ? corpo : JSON.stringify(corpo)
   return requisicao<T>(caminho, { method: 'PUT', body })
 }
+
+export function del<T>(caminho: string) {
+  return requisicao<T>(caminho, { method: 'DELETE' })
+}

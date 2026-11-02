@@ -13,7 +13,11 @@ interface ItemMenu {
 const INICIO: ItemMenu = { to: '/', label: 'Início', icone: 'inicio' }
 
 const ITENS: Record<string, ItemMenu[]> = {
-  MEDICO: [INICIO, { to: '/gestantes', label: 'Gestantes', icone: 'gestantes' }],
+  MEDICO: [
+    INICIO,
+    { to: '/gestantes', label: 'Gestantes', icone: 'gestantes' },
+    { to: '/tipos-atendimento', label: 'Tipos de atendimento', icone: 'validar' },
+  ],
   ADMIN: [
     INICIO,
     { to: '/medicos', label: 'Médicos', icone: 'medicos' },
