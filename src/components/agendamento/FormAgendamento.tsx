@@ -1,38 +1,51 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, get, post } from '@/lib/api'
 import { hoje } from '@/lib/datas'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
+import { CATEGORIAS, type TipoAtendimento } from '../tipo-atendimento/categorias'
 import { Alerta } from '../common/Alerta'
 import { Button } from '../common/Button'
 import { Form } from '../common/Form'
+import { Icone } from '../common/Icone'
 import { InputGroup } from '../common/InputGroup'
 import { SecaoFormulario } from '../common/SecaoFormulario'
 import { SelectGroup } from '../common/SelectGroup'
 
-interface TipoAtendimento {
-  id: number
-  nome: string
-  categoria: 'EXAME' | 'CONSULTA'
-  pontosBase: number
+// Teto por cadastro, igual ao do AgendamentoRequest no backend
+const MAX_ITENS = 20
+
+interface Item {
+  // Identidade estável da linha: o índice mudaria ao remover uma do meio e o React reaproveitaria o campo errado
+  chave: number
+  tipoAtendimento: string
+  dataPrevista: string
+  observacao: string
 }
 
-const OPCOES_CATEGORIA = [
-  { valor: 'EXAME', rotulo: 'Exame' },
-  { valor: 'CONSULTA', rotulo: 'Consulta' },
-]
+interface ErrosItem {
+  tipoAtendimento?: string
+  dataPrevista?: string
+}
 
-type Campo = 'tipoAtendimento' | 'dataPrevista'
+const vazio = (chave: number): Item => ({
+  chave,
+  tipoAtendimento: '',
+  dataPrevista: '',
+  observacao: '',
+})
 
-// Mesmas regras do AgendamentoRequest no backend; a observação é opcional
-const VALIDACOES: Validacoes<Campo> = {
-  tipoAtendimento: (valor) => (valor ? undefined : 'Escolha o exame ou a consulta.'),
-  dataPrevista: (valor) => {
-    if (!valor) return 'Informe a data prevista.'
-    if (valor < hoje()) return 'A data não pode ser no passado.'
-  },
+// Mesmas regras do ItemAgendamentoRequest no backend; a observação é opcional
+function validar(item: Item): ErrosItem {
+  return {
+    tipoAtendimento: item.tipoAtendimento ? undefined : 'Escolha o exame ou a consulta.',
+    dataPrevista: !item.dataPrevista
+      ? 'Informe a data prevista.'
+      : item.dataPrevista < hoje()
+        ? 'A data não pode ser no passado.'
+        : undefined,
+  }
 }
 
 export function FormAgendamento() {
@@ -40,10 +53,10 @@ export function FormAgendamento() {
   const navigate = useNavigate()
   const [tipos, setTipos] = useState<TipoAtendimento[]>()
   const [erroCarga, setErroCarga] = useState(false)
-  const [categoria, setCategoria] = useState('')
+  const [itens, setItens] = useState<Item[]>([vazio(0)])
+  const [erros, setErros] = useState<ErrosItem[]>([])
   const [erro, setErro] = useState<string>()
   const [enviando, setEnviando] = useState(false)
-  const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   useEffect(() => {
     get<TipoAtendimento[]>('/tipos-atendimento')
@@ -51,28 +64,42 @@ export function FormAgendamento() {
       .catch(() => setErroCarga(true))
   }, [])
 
-  // A categoria só filtra a lista; o que vai para a API é o tipo escolhido
-  const disponiveis = (tipos ?? []).filter((tipo) => !categoria || tipo.categoria === categoria)
+  // A categoria vai no rótulo, agrupando a lista sem precisar de um filtro à parte
+  const opcoes = [...(tipos ?? [])]
+    .sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nome.localeCompare(b.nome))
+    .map((tipo) => ({
+      valor: String(tipo.id),
+      rotulo: `${CATEGORIAS[tipo.categoria]} · ${tipo.nome} (${tipo.pontosBase} pontos)`,
+    }))
 
-  async function salvar(dados: FormData) {
-    if (!validarTodos(dados)) return
+  function alterar(chave: number, campo: keyof Omit<Item, 'chave'>, valor: string) {
+    setItens((atuais) =>
+      atuais.map((item) => (item.chave === chave ? { ...item, [campo]: valor } : item)),
+    )
+    // Erro já exibido some assim que a linha é corrigida
+    setErros((atuais) => (atuais.length ? [] : atuais))
+  }
+
+  async function salvar() {
+    const encontrados = itens.map(validar)
+    if (encontrados.some((item) => item.tipoAtendimento || item.dataPrevista)) {
+      setErros(encontrados)
+      return
+    }
 
     setErro(undefined)
     setEnviando(true)
     try {
-      const observacao = String(dados.get('observacao') ?? '').trim()
-      const escolhido = tipos?.find((tipo) => String(tipo.id) === dados.get('tipoAtendimento'))
-      const criado = await post<{ tipo: string }>('/agendamentos', {
+      const criados = await post<{ tipo: string }[]>('/agendamentos', {
         gestante: Number(id),
-        tipoAtendimento: Number(dados.get('tipoAtendimento')),
-        dataPrevista: dados.get('dataPrevista'),
-        // Em branco não vai, para ficar nulo no banco em vez de texto vazio
-        ...(observacao && { observacao }),
+        itens: itens.map((item) => ({
+          tipoAtendimento: Number(item.tipoAtendimento),
+          dataPrevista: item.dataPrevista,
+          // Em branco não vai, para ficar nulo no banco em vez de texto vazio
+          ...(item.observacao.trim() && { observacao: item.observacao.trim() }),
+        })),
       })
-      navigate(`/gestantes/${id}`, {
-        // "Cadastro de X realizado" concorda com qualquer tipo; "X cadastrado" erraria o gênero de "Consulta"
-        state: { mensagem: `Cadastro de ${criado.tipo ?? escolhido?.nome} realizado com sucesso.` },
-      })
+      navigate(`/gestantes/${id}`, { state: { mensagem: confirmacao(criados) } })
     } catch (e) {
       setErro(mensagemDeErro(e))
       setEnviando(false)
@@ -92,42 +119,71 @@ export function FormAgendamento() {
       className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white"
     >
       <SecaoFormulario
-        titulo="Exame ou consulta"
-        descricao="A gestante vê o que foi marcado no app. Os pontos do tipo escolhido só são creditados quando você confirmar a realização."
+        titulo="Exames e consultas"
+        descricao="Adicione quantos precisar: cada item vira um exame ou consulta próprio, com a sua data e a sua confirmação. A gestante vê tudo no app, e os pontos só são creditados quando você confirmar a realização."
       >
-        <SelectGroup
-          labelTxt="Categoria"
-          name="categoria"
-          opcoes={OPCOES_CATEGORIA}
-          vazio="Exames e consultas"
-          value={categoria}
-          onChange={(e) => setCategoria(e.currentTarget.value)}
-          hint="Filtra a lista ao lado"
-        />
-        <SelectGroup
-          labelTxt="Exame ou consulta"
-          {...campo('tipoAtendimento')}
-          opcoes={disponiveis.map((tipo) => ({
-            valor: String(tipo.id),
-            rotulo: `${tipo.nome} (${tipo.pontosBase} pontos)`,
-          }))}
-          vazio="Escolha o exame ou a consulta"
-          required
-        />
-        <InputGroup
-          labelTxt="Data prevista"
-          {...campo('dataPrevista')}
-          type="date"
-          min={hoje()}
-          required
-        />
-        <InputGroup
-          labelTxt="Observação"
-          name="observacao"
-          hint="Opcional"
-          maxLength={1000}
-          placeholder="Ex.: jejum de 8h"
-        />
+        {itens.map((item, indice) => (
+          <fieldset key={item.chave} className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-5">
+            <legend className="sr-only">Exame ou consulta {indice + 1}</legend>
+            <SelectGroup
+              labelTxt="Exame ou consulta"
+              name={`tipoAtendimento-${item.chave}`}
+              opcoes={opcoes}
+              vazio="Escolha o exame ou a consulta"
+              value={item.tipoAtendimento}
+              erro={erros[indice]?.tipoAtendimento}
+              onChange={(e) => alterar(item.chave, 'tipoAtendimento', e.currentTarget.value)}
+            />
+            <InputGroup
+              labelTxt="Data prevista"
+              name={`dataPrevista-${item.chave}`}
+              type="date"
+              min={hoje()}
+              value={item.dataPrevista}
+              erro={erros[indice]?.dataPrevista}
+              onChange={(e) => alterar(item.chave, 'dataPrevista', e.currentTarget.value)}
+            />
+            <InputGroup
+              labelTxt="Observação"
+              name={`observacao-${item.chave}`}
+              hint="Opcional"
+              maxLength={1000}
+              placeholder="Ex.: jejum de 8h"
+              value={item.observacao}
+              onChange={(e) => alterar(item.chave, 'observacao', e.currentTarget.value)}
+              className={itens.length > 1 ? '' : 'col-span-2'}
+            />
+            {/* A linha única não tem o que remover: o cadastro precisa de ao menos um item */}
+            {itens.length > 1 && (
+              <div className="flex items-end">
+                <Button
+                  label="Remover"
+                  style="secondary"
+                  onClick={() => {
+                    setItens((atuais) => atuais.filter((atual) => atual.chave !== item.chave))
+                    setErros([])
+                  }}
+                />
+              </div>
+            )}
+          </fieldset>
+        ))}
+
+        {itens.length < MAX_ITENS && (
+          <div className="col-span-2">
+            <Button
+              label="Adicionar exame ou consulta"
+              style="secondary"
+              icon={<Icone nome="adicionar" />}
+              onClick={() =>
+                setItens((atuais) => [
+                  ...atuais,
+                  vazio(Math.max(...atuais.map((i) => i.chave)) + 1),
+                ])
+              }
+            />
+          </div>
+        )}
       </SecaoFormulario>
 
       <div className="flex items-center justify-end gap-3 rounded-b-lg bg-zinc-50 px-6 py-4">
@@ -148,6 +204,13 @@ export function FormAgendamento() {
       </div>
     </Form>
   )
+}
+
+// "Cadastro de X realizado" concorda com qualquer tipo; "X cadastrado" erraria o gênero de "Consulta"
+function confirmacao(criados: { tipo: string }[]) {
+  return criados.length === 1
+    ? `Cadastro de ${criados[0]?.tipo} realizado com sucesso.`
+    : `Cadastro de ${criados.length} exames e consultas realizado com sucesso.`
 }
 
 function mensagemDeErro(erro: unknown) {

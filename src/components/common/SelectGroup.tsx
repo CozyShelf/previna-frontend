@@ -19,6 +19,8 @@ export function SelectGroup({
   hint,
   erro,
   className = '',
+  value,
+  defaultValue,
   ...selectProps
 }: SelectGroupProps) {
   const selectId = useId()
@@ -37,7 +39,10 @@ export function SelectGroup({
       </div>
       <select
         id={selectId}
-        defaultValue=""
+        value={value}
+        // Sem escolha do chamador, começa na opção vazia. Com value o select é controlado, e mandar
+        // defaultValue junto faria o React avisar.
+        defaultValue={value === undefined && defaultValue === undefined ? '' : defaultValue}
         aria-invalid={erro ? true : undefined}
         aria-describedby={erro ? erroId : undefined}
         {...selectProps}
