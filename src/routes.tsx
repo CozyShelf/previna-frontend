@@ -8,6 +8,8 @@ import { CadastroCupomPage } from '@/pages/CadastroCupomPage'
 import { CadastroPromocaoPage } from '@/pages/CadastroPromocaoPage'
 import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
+import { CadastroAgendamentoPage } from '@/pages/CadastroAgendamentoPage'
+import { GestantePage } from '@/pages/GestantePage'
 import { GestantesPage } from '@/pages/GestantesPage'
 import { InicioPage } from '@/pages/InicioPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -21,6 +23,8 @@ import { PrimeiroAcessoEmpresaPage } from '@/pages/PrimeiroAcessoEmpresaPage'
 import { ProdutoPage } from '@/pages/ProdutoPage'
 import { ProdutosPage } from '@/pages/ProdutosPage'
 import { PromocoesPage } from '@/pages/PromocoesPage'
+import { TipoAtendimentoPage } from '@/pages/TipoAtendimentoPage'
+import { TiposAtendimentoPage } from '@/pages/TiposAtendimentoPage'
 import { TutorialEmpresaPage } from '@/pages/TutorialEmpresaPage'
 
 const titulo = (texto: string): HandleRota => ({ titulo: texto })
@@ -46,6 +50,21 @@ export const router = createBrowserRouter([
                 element: <PreCadastroGestantePage />,
                 handle: titulo('Pré-cadastro'),
               },
+              { path: ':id', element: <GestantePage />, handle: titulo('Gestante') },
+              {
+                path: ':id/agendamentos/novo',
+                element: <CadastroAgendamentoPage />,
+                handle: titulo('Novo exame ou consulta'),
+              },
+            ],
+          },
+          {
+            path: 'tipos-atendimento',
+            handle: titulo('Tipos de atendimento'),
+            children: [
+              { index: true, element: <TiposAtendimentoPage /> },
+              { path: 'novo', element: <TipoAtendimentoPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <TipoAtendimentoPage />, handle: titulo('Edição') },
             ],
           },
           {
