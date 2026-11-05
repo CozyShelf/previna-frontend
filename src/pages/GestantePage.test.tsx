@@ -112,6 +112,33 @@ describe('GestantePage', () => {
     expect(await screen.findByText('Hemograma completo')).toBeInTheDocument()
   })
 
+  it('mostra o login e a senha temporários enquanto o primeiro acesso está pendente', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) =>
+      String(url).endsWith('/agendamentos')
+        ? new Response('[]')
+        : new Response(
+            JSON.stringify({
+              ...GESTANTE,
+              primeiroAcessoPendente: true,
+              credenciaisTemporarias: { login: '52998224725', senha: 'Ab3dEf7h' },
+            }),
+          ),
+    )
+    renderizar()
+
+    expect(await screen.findByText('Senha temporária')).toBeInTheDocument()
+    expect(screen.getByText('52998224725')).toBeInTheDocument()
+    expect(screen.getByText('Ab3dEf7h')).toBeInTheDocument()
+  })
+
+  it('não mostra credenciais temporárias depois do primeiro acesso', async () => {
+    responder(AGENDAMENTOS)
+    renderizar()
+
+    expect(await screen.findByText('Hemograma completo')).toBeInTheDocument()
+    expect(screen.queryByText('Senha temporária')).not.toBeInTheDocument()
+  })
+
   it('mostra o estado vazio e o link de cadastro quando não há nenhum agendamento', async () => {
     responder([])
     renderizar()
