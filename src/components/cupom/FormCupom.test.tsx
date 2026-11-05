@@ -106,4 +106,63 @@ describe('FormCupom', () => {
     )
     expect(screen.queryByRole('button', { name: /cadastrar cupom/i })).not.toBeInTheDocument()
   })
+
+  it('avisa quando não consegue carregar os produtos', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 500 }))
+    renderizar()
+
+    expect(screen.getByText('Carregando produtos…')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível carregar os produtos.',
+    )
+  })
+
+  it('recusa validade no passado e pontos zerados', async () => {
+    const fetch = responder(PRODUTOS)
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Produto'), '10')
+    await userEvent.type(screen.getByLabelText('Desconto (%)'), '10')
+    await userEvent.type(screen.getByLabelText('Validade'), '2000-01-01')
+    await userEvent.type(screen.getByLabelText('Pontos para resgatar'), '0')
+    await userEvent.click(screen.getByRole('button', { name: /cadastrar cupom/i }))
+
+    expect(screen.getByText('A validade já passou.')).toBeInTheDocument()
+    expect(screen.getByText('Informe um número inteiro maior que zero.')).toBeInTheDocument()
+    expect(fetch.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+  })
+
+  it('pede a validade e os pontos quando ficam vazios', async () => {
+    responder(PRODUTOS)
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /cadastrar cupom/i }))
+
+    expect(screen.getByText('Informe a validade.')).toBeInTheDocument()
+    expect(screen.getByText('Informe os pontos necessários.')).toBeInTheDocument()
+  })
+
+  it.each([
+    [400, 'O servidor não aceitou os dados. Confira a validade e o produto e tente novamente.'],
+    [500, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'],
+  ])('com resposta %i ao salvar, avisa e libera o botão', async (status, mensagem) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_, init) =>
+      init?.method === 'POST'
+        ? new Response('{}', { status })
+        : new Response(
+            JSON.stringify({ itens: PRODUTOS, pagina: 0, tamanho: 100, total: 2, totalPaginas: 1 }),
+          ),
+    )
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Produto'), '11')
+    expect(screen.getByRole('option', { name: 'Body de algodão' })).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Desconto (%)'), '10')
+    await userEvent.type(screen.getByLabelText('Validade'), daquiA30Dias())
+    await userEvent.type(screen.getByLabelText('Pontos para resgatar'), '200')
+    await userEvent.click(screen.getByRole('button', { name: /cadastrar cupom/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
+    expect(screen.getByRole('button', { name: /cadastrar cupom/i })).toBeEnabled()
+  })
 })

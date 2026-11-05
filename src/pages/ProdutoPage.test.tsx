@@ -36,4 +36,15 @@ describe('ProdutoPage', () => {
     expect(screen.getByText(/não foi possível carregar o produto/i)).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
   })
+
+  it('avisa quando não consegue carregar o produto', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 404 }))
+    renderizar('/produtos/5')
+
+    expect(screen.getByText('Carregando produto…')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível carregar o produto.',
+    )
+    expect(screen.queryByLabelText('Nome')).not.toBeInTheDocument()
+  })
 })
