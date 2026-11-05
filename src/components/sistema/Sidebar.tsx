@@ -22,6 +22,7 @@ const ITENS: Record<string, ItemMenu[]> = {
     INICIO,
     { to: '/medicos', label: 'Médicos', icone: 'medicos' },
     { to: '/empresas', label: 'Empresas parceiras', icone: 'empresas' },
+    { to: '/conteudos', label: 'Conteúdo educativo', icone: 'conteudo' },
   ],
   EMPRESA_PARCEIRA: [
     INICIO,

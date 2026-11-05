@@ -6,6 +6,8 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { SistemaLayout } from '@/layouts/SistemaLayout'
 import { CadastroCupomPage } from '@/pages/CadastroCupomPage'
 import { CadastroPromocaoPage } from '@/pages/CadastroPromocaoPage'
+import { ConteudoPage } from '@/pages/ConteudoPage'
+import { ConteudosPage } from '@/pages/ConteudosPage'
 import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
 import { CadastroAgendamentoPage } from '@/pages/CadastroAgendamentoPage'
@@ -65,6 +67,15 @@ export const router = createBrowserRouter([
               { index: true, element: <TiposAtendimentoPage /> },
               { path: 'novo', element: <TipoAtendimentoPage />, handle: titulo('Cadastro') },
               { path: ':id', element: <TipoAtendimentoPage />, handle: titulo('Edição') },
+            ],
+          },
+          {
+            path: 'conteudos',
+            handle: titulo('Conteúdo educativo'),
+            children: [
+              { index: true, element: <ConteudosPage /> },
+              { path: 'novo', element: <ConteudoPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <ConteudoPage />, handle: titulo('Edição') },
             ],
           },
           {
