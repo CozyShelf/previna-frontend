@@ -12,7 +12,7 @@ import {
   type TipoAtendimento,
 } from '@/components/tipo-atendimento/categorias'
 import { del } from '@/lib/api'
-import BUTTON_CLASSES from '@/types/ButtonClasses'
+import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
 const COLUNAS = ['Tipo', 'Categoria', 'Pontuação']
 
@@ -128,7 +128,7 @@ function TabelaTipos({ tipos, excluindo, onExcluir }: TabelaTiposProps) {
                   <Link
                     to={`/tipos-atendimento/${tipo.id}`}
                     aria-label={`Editar ${tipo.nome}`}
-                    className="font-medium text-previna-600 hover:text-previna-700"
+                    className={ACAO_LISTAGEM.editar}
                   >
                     Editar
                   </Link>
@@ -137,7 +137,7 @@ function TabelaTipos({ tipos, excluindo, onExcluir }: TabelaTiposProps) {
                     aria-label={`Excluir ${tipo.nome}`}
                     disabled={excluindo !== undefined}
                     onClick={() => onExcluir(tipo)}
-                    className="font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                    className={ACAO_LISTAGEM.excluir}
                   >
                     {excluindo === tipo.id ? 'Excluindo…' : 'Excluir'}
                   </button>

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
 import {
   CATEGORIAS,
@@ -10,7 +12,8 @@ import {
 } from '@/components/conteudo/tipos'
 import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
-import BUTTON_CLASSES from '@/types/ButtonClasses'
+import { del } from '@/lib/api'
+import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
 const COLUNAS = ['Conteúdo', 'Categoria', 'Tipo', 'Situação']
 
@@ -37,8 +40,34 @@ const FILTROS: FiltroListagem[] = [
 ]
 
 export function ConteudosPage() {
-  // Confirmação deixada pelo formulário ao voltar para a lista
-  const mensagem = (useLocation().state as { mensagem?: string } | null)?.mensagem
+  // Confirmação deixada pelo formulário ao voltar para a lista, ou pela exclusão feita aqui
+  const [mensagem, setMensagem] = useState(
+    (useLocation().state as { mensagem?: string } | null)?.mensagem,
+  )
+  const [erro, setErro] = useState<string>()
+  const [excluindo, setExcluindo] = useState<number>()
+
+  async function excluir(conteudo: Conteudo, recarregar: () => void) {
+    if (
+      !window.confirm(
+        `Excluir o conteúdo ${conteudo.titulo}? Ele sai do aplicativo das gestantes e não dá para desfazer.`,
+      )
+    )
+      return
+
+    setMensagem(undefined)
+    setErro(undefined)
+    setExcluindo(conteudo.id)
+    try {
+      await del(`/conteudos/${conteudo.id}`)
+      setMensagem(`Conteúdo ${conteudo.titulo} excluído com sucesso.`)
+      recarregar()
+    } catch {
+      setErro(`Não foi possível excluir o conteúdo ${conteudo.titulo}. Tente novamente.`)
+    } finally {
+      setExcluindo(undefined)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,13 +87,20 @@ export function ConteudosPage() {
           {mensagem}
         </p>
       )}
+      {erro && <Alerta mensagem={erro} />}
       <Listagem<Conteudo>
         caminho="/conteudos"
         descricaoBusca="Buscar pelo título"
         filtros={FILTROS}
         vazio={<p className="text-zinc-500">Nenhum conteúdo cadastrado ainda.</p>}
       >
-        {(conteudos) => <TabelaConteudos conteudos={conteudos} />}
+        {(conteudos, recarregar) => (
+          <TabelaConteudos
+            conteudos={conteudos}
+            excluindo={excluindo}
+            onExcluir={(conteudo) => excluir(conteudo, recarregar)}
+          />
+        )}
       </Listagem>
     </div>
   )
@@ -76,7 +112,14 @@ const CLASSES_SITUACAO = {
   false: 'bg-zinc-100 text-zinc-600 ring-zinc-300',
 }
 
-function TabelaConteudos({ conteudos }: { conteudos: Conteudo[] }) {
+interface TabelaConteudosProps {
+  conteudos: Conteudo[]
+  // Id do conteúdo cuja exclusão está em andamento
+  excluindo?: number
+  onExcluir: (conteudo: Conteudo) => void
+}
+
+function TabelaConteudos({ conteudos, excluindo, onExcluir }: TabelaConteudosProps) {
   return (
     <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <table className="w-full text-left">
@@ -109,13 +152,24 @@ function TabelaConteudos({ conteudos }: { conteudos: Conteudo[] }) {
                 </span>
               </td>
               <td className="py-3 pr-6 text-right">
-                <Link
-                  to={`/conteudos/${conteudo.id}`}
-                  aria-label={`Editar ${conteudo.titulo}`}
-                  className="font-medium text-previna-600 hover:text-previna-700"
-                >
-                  Editar
-                </Link>
+                <div className="flex items-center justify-end gap-4">
+                  <Link
+                    to={`/conteudos/${conteudo.id}`}
+                    aria-label={`Editar ${conteudo.titulo}`}
+                    className={ACAO_LISTAGEM.editar}
+                  >
+                    Editar
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label={`Excluir ${conteudo.titulo}`}
+                    disabled={excluindo !== undefined}
+                    onClick={() => onExcluir(conteudo)}
+                    className={ACAO_LISTAGEM.excluir}
+                  >
+                    {excluindo === conteudo.id ? 'Excluindo…' : 'Excluir'}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

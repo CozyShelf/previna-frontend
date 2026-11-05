@@ -33,6 +33,18 @@ const PAGINA = {
   totalPaginas: 1,
 }
 
+// A listagem responde a lista; a exclusão responde o que o teste pedir
+function mockarApi(resposta: () => Response) {
+  return vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (_url, init) =>
+      init?.method && init.method !== 'GET' ? resposta() : new Response(JSON.stringify(PAGINA)),
+    )
+}
+
+const listagens = (fetch: ReturnType<typeof mockarApi>) =>
+  fetch.mock.calls.filter(([, init]) => !init?.method || init.method === 'GET').length
+
 afterEach(() => {
   vi.restoreAllMocks()
 })
@@ -95,6 +107,64 @@ describe('ConteudosPage', () => {
 
     await userEvent.click(screen.getByRole('link', { name: /cadastrar conteúdo/i }))
     expect(await screen.findByText('Formulário de cadastro')).toBeInTheDocument()
+  })
+
+  // Excluir tira o conteúdo do app das gestantes e apaga a imagem junto; não dá para desfazer
+  it('exclui o conteúdo pela linha da listagem e recarrega a lista', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <ConteudosPage />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Excluir Alimentação na gestação' }),
+    )
+
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'DELETE')
+    expect(String(envio?.[0])).toMatch(/\/conteudos\/10$/)
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Conteúdo Alimentação na gestação excluído com sucesso.',
+    )
+    expect(listagens(fetch)).toBe(2)
+  })
+
+  it('não exclui quando o admin cancela a confirmação', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(
+      <MemoryRouter>
+        <ConteudosPage />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Excluir Alimentação na gestação' }),
+    )
+
+    expect(fetch.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+    expect(listagens(fetch)).toBe(1)
+  })
+
+  it('avisa quando a exclusão falha', async () => {
+    const fetch = mockarApi(() => new Response('{}', { status: 500 }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <ConteudosPage />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Excluir Alimentação na gestação' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível excluir o conteúdo Alimentação na gestação. Tente novamente.',
+    )
+    expect(listagens(fetch)).toBe(1)
   })
 
   it('mostra o estado vazio quando ainda não há conteúdo cadastrado', async () => {

@@ -8,4 +8,11 @@ const BUTTON_CLASSES: Record<ButtonProps['style'], string> = {
   secondary: `${BASE} border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50`,
 }
 
+// Ações no fim da linha das listagens: azul edita, vermelho exclui. A cor da marca (previna-600)
+// é vermelha e deixava as duas ações com a mesma cor
+export const ACAO_LISTAGEM = {
+  editar: 'font-medium text-blue-600 hover:text-blue-700',
+  excluir: 'font-medium text-red-600 hover:text-red-700 disabled:opacity-50',
+}
+
 export default BUTTON_CLASSES
