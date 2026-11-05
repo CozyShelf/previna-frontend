@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
-import { ApiError, del, post, put } from '@/lib/api'
+import { ApiError, post, put } from '@/lib/api'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 import { Alerta } from '../common/Alerta'
 import { Button } from '../common/Button'
@@ -11,11 +11,6 @@ import { InputGroup } from '../common/InputGroup'
 import { SecaoFormulario } from '../common/SecaoFormulario'
 import { SelectGroup } from '../common/SelectGroup'
 import { OPCOES_CATEGORIA, type TipoAtendimento } from './categorias'
-
-const OPCOES_STATUS = [
-  { valor: 'true', rotulo: 'Ativo' },
-  { valor: 'false', rotulo: 'Inativo' },
-]
 
 type Campo = 'nome' | 'categoria' | 'pontosBase'
 
@@ -36,11 +31,11 @@ export interface FormTipoAtendimentoProps {
   tipo?: TipoAtendimento
 }
 
+// Excluir não fica aqui: é uma ação da linha na listagem
 export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
   const [enviando, setEnviando] = useState(false)
-  const [excluindo, setExcluindo] = useState(false)
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function salvar(dados: FormData) {
@@ -53,7 +48,6 @@ export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
         nome: String(dados.get('nome')).trim(),
         categoria: dados.get('categoria'),
         pontosBase: Number(dados.get('pontosBase')),
-        ativo: dados.get('ativo') === 'true',
       }
       if (tipo) await put(`/tipos-atendimento/${tipo.id}`, corpo)
       else await post('/tipos-atendimento', corpo)
@@ -63,29 +57,8 @@ export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
         },
       })
     } catch (e) {
-      setErro(mensagemDeErro(e, 'Já existe um tipo seu com esse nome.'))
+      setErro(mensagemDeErro(e))
       setEnviando(false)
-    }
-  }
-
-  // Excluir só vale enquanto ninguém usou o tipo; depois disso o backend responde 409 e o caminho é desativar
-  async function excluir() {
-    if (!tipo) return
-    setErro(undefined)
-    setExcluindo(true)
-    try {
-      await del(`/tipos-atendimento/${tipo.id}`)
-      navigate('/tipos-atendimento', {
-        state: { mensagem: `Tipo ${tipo.nome} excluído com sucesso.` },
-      })
-    } catch (e) {
-      setErro(
-        mensagemDeErro(
-          e,
-          'Este tipo já tem exames ou consultas cadastrados. Mude o status para inativo em vez de excluir.',
-        ),
-      )
-      setExcluindo(false)
     }
   }
 
@@ -126,14 +99,6 @@ export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
           required
           hint="De 1 a 1000"
         />
-        <SelectGroup
-          labelTxt="Status"
-          name="ativo"
-          opcoes={OPCOES_STATUS}
-          vazio="Escolha o status"
-          defaultValue={String(tipo?.ativo ?? true)}
-          hint="O inativo some da lista de escolha, mas continua no histórico"
-        />
       </SecaoFormulario>
 
       <div className="flex items-center justify-end gap-3 rounded-b-lg bg-zinc-50 px-6 py-4">
@@ -142,15 +107,6 @@ export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
             <Alerta mensagem={erro} />
           </div>
         )}
-        {tipo && (
-          <Button
-            label={excluindo ? 'Excluindo…' : 'Excluir'}
-            style="secondary"
-            className={erro ? '' : 'mr-auto'}
-            disabled={enviando || excluindo}
-            onClick={excluir}
-          />
-        )}
         <Link to="/tipos-atendimento" className={BUTTON_CLASSES.secondary}>
           Cancelar
         </Link>
@@ -158,16 +114,16 @@ export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
           label={enviando ? 'Salvando…' : tipo ? 'Salvar alterações' : 'Cadastrar tipo'}
           style="primary"
           type="submit"
-          disabled={enviando || excluindo}
+          disabled={enviando}
         />
       </div>
     </Form>
   )
 }
 
-// O ApiError só carrega o status, e o 409 tem causas diferentes no salvar e no excluir: quem chama diz qual é
-function mensagemDeErro(erro: unknown, conflito: string) {
-  if (erro instanceof ApiError && erro.status === 409) return conflito
+// O ApiError só carrega o status
+function mensagemDeErro(erro: unknown) {
+  if (erro instanceof ApiError && erro.status === 409) return 'Já existe um tipo seu com esse nome.'
   if (erro instanceof ApiError && erro.status === 400)
     return 'O servidor não aceitou os dados. Confira os campos e tente novamente.'
   if (erro instanceof ApiError && erro.status === 404)

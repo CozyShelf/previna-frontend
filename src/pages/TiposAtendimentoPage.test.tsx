@@ -8,22 +8,8 @@ import { TiposAtendimentoPage } from './TiposAtendimentoPage'
 
 const MEUS = {
   itens: [
-    {
-      id: 10,
-      nome: 'Ultrassom 4D',
-      categoria: 'EXAME',
-      pontosBase: 30,
-      ativo: true,
-      padrao: false,
-    },
-    {
-      id: 11,
-      nome: 'Consulta de retorno',
-      categoria: 'CONSULTA',
-      pontosBase: 40,
-      ativo: false,
-      padrao: false,
-    },
+    { id: 10, nome: 'Ultrassom 4D', categoria: 'EXAME', pontosBase: 30, padrao: false },
+    { id: 11, nome: 'Consulta de retorno', categoria: 'CONSULTA', pontosBase: 40, padrao: false },
   ],
   pagina: 0,
   tamanho: 20,
@@ -31,16 +17,28 @@ const MEUS = {
   totalPaginas: 1,
 }
 
+// A listagem responde a lista; cadastro, edição e exclusão respondem vazio
+function mockarApi(resposta: (init?: RequestInit) => Response) {
+  return vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (url, init) =>
+      init?.method && init.method !== 'GET'
+        ? resposta(init)
+        : new Response(JSON.stringify(String(url).includes('/meus') ? MEUS : MEUS.itens[0])),
+    )
+}
+
+const listagens = (fetch: ReturnType<typeof mockarApi>) =>
+  fetch.mock.calls.filter(([url]) => String(url).includes('/tipos-atendimento/meus')).length
+
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
 describe('TiposAtendimentoPage', () => {
   // Isolamento por médico: a listagem usa a rota do médico autenticado, sem id no caminho
-  it('lista os tipos do próprio médico, com a pontuação e o status', async () => {
-    const fetch = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(JSON.stringify(MEUS)))
+  it('lista os tipos do próprio médico, com a pontuação e sem status', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
     render(
       <MemoryRouter>
         <TiposAtendimentoPage />
@@ -49,13 +47,14 @@ describe('TiposAtendimentoPage', () => {
 
     expect(await screen.findByText('Ultrassom 4D')).toBeInTheDocument()
     expect(screen.getByText('30')).toBeInTheDocument()
-    expect(screen.getByText('Ativo')).toBeInTheDocument()
-    expect(screen.getByText('Inativo')).toBeInTheDocument()
+    // O status saiu do sistema: o que some da lista é o excluído
+    expect(screen.queryByText('Ativo')).not.toBeInTheDocument()
+    expect(screen.queryByText('Inativo')).not.toBeInTheDocument()
     expect(String(fetch.mock.calls[0]?.[0])).toMatch(/\/tipos-atendimento\/meus$/)
   })
 
-  it('envia o cadastro com a categoria, a pontuação e o status', async () => {
-    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
+  it('envia o cadastro com a categoria e a pontuação, sem campo de status', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
     render(
       <MemoryRouter initialEntries={['/tipos-atendimento/novo']}>
         <Routes>
@@ -65,6 +64,7 @@ describe('TiposAtendimentoPage', () => {
       </MemoryRouter>,
     )
 
+    expect(screen.queryByLabelText('Status')).not.toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Nome'), 'Ultrassom 4D')
     await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'EXAME')
     await userEvent.type(screen.getByLabelText('Pontuação'), '30')
@@ -75,18 +75,13 @@ describe('TiposAtendimentoPage', () => {
       nome: 'Ultrassom 4D',
       categoria: 'EXAME',
       pontosBase: 30,
-      ativo: true,
     })
     expect(await screen.findByText('Lista de tipos')).toBeInTheDocument()
   })
 
   // Na edição o formulário chega preenchido e envia PUT no id da rota
   it('carrega o tipo pelo id da URL e salva a alteração com PUT', async () => {
-    const fetch = vi
-      .spyOn(globalThis, 'fetch')
-      .mockImplementation(async (_url, init) =>
-        init?.method === 'PUT' ? new Response('{}') : new Response(JSON.stringify(MEUS.itens[0])),
-      )
+    const fetch = mockarApi(() => new Response('{}'))
     render(
       <MemoryRouter initialEntries={['/tipos-atendimento/10']}>
         <Routes>
@@ -99,10 +94,11 @@ describe('TiposAtendimentoPage', () => {
     expect(await screen.findByLabelText('Nome')).toHaveValue('Ultrassom 4D')
     expect(screen.getByLabelText('Categoria')).toHaveValue('EXAME')
     expect(screen.getByLabelText('Pontuação')).toHaveValue(30)
-    expect(screen.getByLabelText('Status')).toHaveValue('true')
+    // Excluir é ação da listagem, e não do formulário
+    expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument()
 
-    // Desativar é feito por aqui, e não por uma ação à parte
-    await userEvent.selectOptions(screen.getByLabelText('Status'), 'false')
+    await userEvent.clear(screen.getByLabelText('Pontuação'))
+    await userEvent.type(screen.getByLabelText('Pontuação'), '45')
     await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
 
     const envio = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
@@ -110,8 +106,7 @@ describe('TiposAtendimentoPage', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toEqual({
       nome: 'Ultrassom 4D',
       categoria: 'EXAME',
-      pontosBase: 30,
-      ativo: false,
+      pontosBase: 45,
     })
     expect(await screen.findByText('Lista de tipos')).toBeInTheDocument()
   })
@@ -130,25 +125,57 @@ describe('TiposAtendimentoPage', () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
-  // Excluir um tipo já usado é recusado com 409; o caminho é desativar
-  it('explica que o tipo já usado deve ser desativado em vez de excluído', async () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) =>
-      init?.method === 'DELETE'
-        ? new Response('{}', { status: 409 })
-        : new Response(JSON.stringify(MEUS.itens[0])),
-    )
+  // A exclusão é lógica no backend: o tipo some da lista e o histórico da gestante continua
+  it('exclui o tipo pela linha da listagem e recarrega a lista', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(
-      <MemoryRouter initialEntries={['/tipos-atendimento/10']}>
-        <Routes>
-          <Route path="/tipos-atendimento/:id" element={<TipoAtendimentoPage />} />
-        </Routes>
+      <MemoryRouter>
+        <TiposAtendimentoPage />
       </MemoryRouter>,
     )
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Excluir' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir Ultrassom 4D' }))
+
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'DELETE')
+    expect(String(envio?.[0])).toMatch(/\/tipos-atendimento\/10$/)
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Tipo Ultrassom 4D excluído com sucesso.',
+    )
+    expect(listagens(fetch)).toBe(2)
+  })
+
+  // Clique sem querer não apaga nada
+  it('não exclui quando o médico cancela a confirmação', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(
+      <MemoryRouter>
+        <TiposAtendimentoPage />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir Ultrassom 4D' }))
+
+    expect(fetch.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+    expect(listagens(fetch)).toBe(1)
+  })
+
+  it('avisa quando a exclusão falha', async () => {
+    const fetch = mockarApi(() => new Response('{}', { status: 500 }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <TiposAtendimentoPage />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir Ultrassom 4D' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Este tipo já tem exames ou consultas cadastrados. Mude o status para inativo em vez de excluir.',
+      'Não foi possível excluir o tipo Ultrassom 4D. Tente novamente.',
     )
+    // A lista não é recarregada à toa quando a exclusão falha
+    expect(listagens(fetch)).toBe(1)
   })
 })

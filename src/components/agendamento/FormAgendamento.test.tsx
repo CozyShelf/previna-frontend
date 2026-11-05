@@ -15,7 +15,6 @@ const TIPOS = [
     nome: 'Hemograma completo',
     categoria: 'EXAME',
     pontosBase: 25,
-    ativo: true,
     padrao: true,
   },
   {
@@ -23,7 +22,6 @@ const TIPOS = [
     nome: 'Urina tipo I (EAS)',
     categoria: 'EXAME',
     pontosBase: 20,
-    ativo: true,
     padrao: true,
   },
   {
@@ -31,7 +29,6 @@ const TIPOS = [
     nome: 'Consulta puerperal',
     categoria: 'CONSULTA',
     pontosBase: 50,
-    ativo: true,
     padrao: true,
   },
 ]

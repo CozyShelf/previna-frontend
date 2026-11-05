@@ -16,7 +16,6 @@ export interface TipoAtendimento {
   nome: string
   categoria: CategoriaAtendimento
   pontosBase: number
-  ativo: boolean
   // Veio da carga inicial do sistema: aparece para todo médico e nenhum deles edita
   padrao: boolean
 }

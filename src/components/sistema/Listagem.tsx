@@ -23,7 +23,8 @@ export interface ListagemProps<T> {
   filtros: FiltroListagem[]
   // Exibido quando ainda não há nada cadastrado (sem busca nem filtro)
   vazio: ReactNode
-  children: (itens: T[]) => ReactNode
+  // recarregar refaz a consulta atual: quem exclui um item de dentro da lista chama isso
+  children: (itens: T[], recarregar: () => void) => ReactNode
 }
 
 const CLASSES_CAMPO =
@@ -41,6 +42,7 @@ export function Listagem<T>({
   const consulta = params.toString()
   const [resultado, setResultado] = useState<{ consulta: string; pagina?: Pagina<T> }>()
   const [busca, setBusca] = useState(params.get('busca') ?? '')
+  const [versao, setVersao] = useState(0)
   const espera = useRef<number>(undefined)
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function Listagem<T>({
     return () => {
       vigente = false
     }
-  }, [caminho, consulta])
+  }, [caminho, consulta, versao])
 
   // Busca pendente não pode alterar a URL depois de sair da página
   useEffect(() => () => clearTimeout(espera.current), [])
@@ -139,7 +141,7 @@ export function Listagem<T>({
       )}
       {pagina && pagina.itens.length > 0 && (
         <div aria-busy={carregando} className={carregando ? 'opacity-60' : undefined}>
-          {children(pagina.itens)}
+          {children(pagina.itens, () => setVersao((atual) => atual + 1))}
           <Paginacao
             pagina={pagina}
             onIrPara={(numero) => alterar('pagina', numero ? String(numero) : '')}
