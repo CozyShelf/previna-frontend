@@ -4,8 +4,7 @@ import { RotaProtegida } from '@/components/RotaProtegida'
 import type { HandleRota } from '@/components/sistema/Trilha'
 import { AppLayout } from '@/layouts/AppLayout'
 import { SistemaLayout } from '@/layouts/SistemaLayout'
-import { CadastroCupomPage } from '@/pages/CadastroCupomPage'
-import { CadastroPromocaoPage } from '@/pages/CadastroPromocaoPage'
+import { CupomPage } from '@/pages/CupomPage'
 import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
 import { CadastroAgendamentoPage } from '@/pages/CadastroAgendamentoPage'
@@ -22,6 +21,7 @@ import { PreCadastroGestantePage } from '@/pages/PreCadastroGestantePage'
 import { PrimeiroAcessoEmpresaPage } from '@/pages/PrimeiroAcessoEmpresaPage'
 import { ProdutoPage } from '@/pages/ProdutoPage'
 import { ProdutosPage } from '@/pages/ProdutosPage'
+import { PromocaoPage } from '@/pages/PromocaoPage'
 import { PromocoesPage } from '@/pages/PromocoesPage'
 import { TipoAtendimentoPage } from '@/pages/TipoAtendimentoPage'
 import { TiposAtendimentoPage } from '@/pages/TiposAtendimentoPage'
@@ -102,7 +102,8 @@ export const router = createBrowserRouter([
             handle: titulo('Promoções'),
             children: [
               { index: true, element: <PromocoesPage /> },
-              { path: 'novo', element: <CadastroPromocaoPage />, handle: titulo('Cadastro') },
+              { path: 'novo', element: <PromocaoPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <PromocaoPage />, handle: titulo('Edição') },
             ],
           },
           {
@@ -110,7 +111,8 @@ export const router = createBrowserRouter([
             handle: titulo('Cupons'),
             children: [
               { index: true, element: <CuponsPage /> },
-              { path: 'novo', element: <CadastroCupomPage />, handle: titulo('Cadastro') },
+              { path: 'novo', element: <CupomPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <CupomPage />, handle: titulo('Edição') },
             ],
           },
           { path: 'perfil', element: <PerfilPage />, handle: titulo('Meu perfil') },

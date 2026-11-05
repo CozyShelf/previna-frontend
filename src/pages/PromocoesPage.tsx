@@ -57,6 +57,9 @@ function TabelaPromocoes({ promocoes }: { promocoes: Promocao[] }) {
                 {coluna}
               </th>
             ))}
+            <th scope="col" className="pr-6">
+              <span className="sr-only">Ações</span>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100">
@@ -74,6 +77,15 @@ function TabelaPromocoes({ promocoes }: { promocoes: Promocao[] }) {
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-zinc-700 tabular-nums">
                 {formatarData(promocao.dataInicio)} a {formatarData(promocao.dataFim)}
+              </td>
+              <td className="py-3 pr-6 text-right">
+                <Link
+                  to={`/promocoes/${promocao.id}`}
+                  aria-label={`Editar ${promocao.titulo}`}
+                  className="font-medium text-previna-600 hover:text-previna-700"
+                >
+                  Editar
+                </Link>
               </td>
             </tr>
           ))}

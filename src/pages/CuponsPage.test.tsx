@@ -9,6 +9,7 @@ const CUPOM = {
   id: 7,
   descricao: '10% de desconto em Fralda RN',
   produto: 'Fralda RN',
+  idProduto: 10,
   desconto: 10,
   dataValidade: '2030-01-31',
   pontosNecessarios: 1500,
@@ -50,6 +51,9 @@ describe('CuponsPage', () => {
     expect(screen.getByText('1.500')).toBeInTheDocument()
     expect(screen.getByText('Ativo')).toBeInTheDocument()
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Editar 10% de desconto em Fralda RN' }),
+    ).toHaveAttribute('href', '/cupons/7')
   })
 
   it('desativa e reativa o cupom', async () => {
