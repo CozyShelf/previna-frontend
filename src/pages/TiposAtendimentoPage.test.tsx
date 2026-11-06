@@ -151,4 +151,19 @@ describe('TiposAtendimentoPage', () => {
       'Este tipo já tem exames ou consultas cadastrados. Mude o status para inativo em vez de excluir.',
     )
   })
+
+  it('avisa quando não consegue carregar o tipo para edição', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 500 }))
+    render(
+      <MemoryRouter initialEntries={['/tipos-atendimento/10']}>
+        <Routes>
+          <Route path="/tipos-atendimento/:id" element={<TipoAtendimentoPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Carregando tipo…')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar o tipo.')
+    expect(screen.queryByLabelText('Nome')).not.toBeInTheDocument()
+  })
 })

@@ -74,4 +74,62 @@ describe('FormPromocao', () => {
     expect(screen.getByText('Escolha a categoria.')).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
   })
+
+  async function preencher(inicio: string, fim: string) {
+    await userEvent.type(screen.getByLabelText('Título'), 'Semana do bebê')
+    await userEvent.type(screen.getByLabelText('Descrição'), 'Só nesta semana')
+    await userEvent.type(screen.getByLabelText('Desconto (%)'), '15')
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'Roupas')
+    await userEvent.type(screen.getByLabelText('Início'), inicio)
+    await userEvent.type(screen.getByLabelText('Fim'), fim)
+    await userEvent.click(screen.getByRole('button', { name: /cadastrar promoção/i }))
+  }
+
+  it('pede título, desconto e as datas quando ficam vazios', async () => {
+    renderizar()
+
+    await userEvent.click(screen.getByRole('button', { name: /cadastrar promoção/i }))
+
+    expect(screen.getByText('Informe o título da promoção.')).toBeInTheDocument()
+    expect(screen.getByText('Informe a data de início.')).toBeInTheDocument()
+    expect(screen.getByText('Informe a data de fim.')).toBeInTheDocument()
+  })
+
+  it('recusa uma vigência que já terminou', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch')
+    renderizar()
+
+    await preencher(dataLocal(-10), dataLocal(-1))
+
+    expect(screen.getByText('A data de fim já passou.')).toBeInTheDocument()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('envia a descrição quando preenchida', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 201 }))
+    renderizar()
+
+    await preencher(dataLocal(0), dataLocal(0))
+
+    expect(await screen.findByText(/cadastrada com sucesso/)).toBeInTheDocument()
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({
+      descricao: 'Só nesta semana',
+      categoria: 'ROUPAS',
+    })
+  })
+
+  it.each([
+    [400, 'O servidor não aceitou os dados. Confira o período e a categoria e tente novamente.'],
+    [500, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'],
+  ])('com resposta %i ao salvar, avisa e libera o botão', async (status, mensagem) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status }))
+    renderizar()
+
+    await preencher(dataLocal(0), dataLocal(3))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
+    expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
+  })
 })
