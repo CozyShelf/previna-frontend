@@ -75,4 +75,60 @@ describe('FormPerfilEmpresa', () => {
     expect(screen.getByLabelText('Endereço')).toHaveFocus()
     expect(fetch).toHaveBeenCalledTimes(1)
   })
+
+  it('avisa quando não consegue carregar os dados da empresa', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 500 }))
+    render(<FormPerfilEmpresa onSalvo={vi.fn()} />)
+
+    expect(screen.getByText('Carregando dados da empresa…')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível carregar os dados da empresa.',
+    )
+    expect(screen.queryByRole('button', { name: 'Salvar alterações' })).not.toBeInTheDocument()
+  })
+
+  it('envia o logo novo quando escolhido', async () => {
+    // O FormData do jsdom não enxerga o arquivo do userEvent.upload: entra pelo input
+    const FormDataOriginal = FormData
+    vi.stubGlobal(
+      'FormData',
+      class extends FormDataOriginal {
+        constructor(form?: HTMLFormElement) {
+          super(form)
+          const input = form?.querySelector<HTMLInputElement>('input[type=file]')
+          if (input?.files?.[0]) this.set(input.name, input.files[0])
+        }
+      },
+    )
+    const fetch = responder(EMPRESA, EMPRESA)
+    render(<FormPerfilEmpresa onSalvo={vi.fn()} />)
+
+    await userEvent.upload(
+      await screen.findByLabelText('Logo'),
+      new File([new Uint8Array(10)], 'logo.png', { type: 'image/png' }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+    expect(await screen.findByText('Alterações salvas.')).toBeInTheDocument()
+    expect((fetch.mock.calls[1]?.[1]?.body as FormData).get('logo')).toBeInstanceOf(File)
+    vi.unstubAllGlobals()
+  })
+
+  it.each([
+    [409, 'Este e-mail já está em uso por outro cadastro.'],
+    [400, 'O servidor não aceitou os dados ou o logo. Confira os campos e tente novamente.'],
+    [413, 'A imagem do logo é grande demais. Escolha uma com até 2 MB.'],
+    [500, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'],
+  ])('com resposta %i ao salvar, avisa e não confirma', async (status, mensagem) => {
+    const fetch = responder(EMPRESA)
+    fetch.mockResolvedValueOnce(new Response('{}', { status }))
+    const onSalvo = vi.fn()
+    render(<FormPerfilEmpresa onSalvo={onSalvo} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Salvar alterações' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
+    expect(screen.queryByText('Alterações salvas.')).not.toBeInTheDocument()
+    expect(onSalvo).not.toHaveBeenCalled()
+  })
 })

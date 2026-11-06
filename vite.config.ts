@@ -24,6 +24,13 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/test/**', 'src/**/*.d.ts', 'src/main.tsx'],
+      // Pisos de cobertura: o PR reprova abaixo deles. Subir junto quando a cobertura subir.
+      thresholds: {
+        statements: 95,
+        branches: 92,
+        functions: 95,
+        lines: 95,
+      },
     },
   },
 })

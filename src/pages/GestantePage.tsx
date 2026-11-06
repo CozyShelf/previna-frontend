@@ -26,7 +26,10 @@ export function GestantePage() {
   useEffect(() => {
     if (!idValido) return
     let vigente = true
-    Promise.all([get<Gestante>(`/gestantes/${id}`), get<Agendamento[]>(`/gestantes/${id}/agendamentos`)])
+    Promise.all([
+      get<Gestante>(`/gestantes/${id}`),
+      get<Agendamento[]>(`/gestantes/${id}/agendamentos`),
+    ])
       .then(([dados, lista]) => {
         if (!vigente) return
         setGestante(dados)

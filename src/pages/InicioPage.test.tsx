@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { InicioPage } from './InicioPage'
 import { encerrarSessao, salvarToken } from '@/lib/auth'
+import { entrarComo } from '@/test/sessao'
 
 const ATENDIMENTOS = [
   {
@@ -42,6 +43,7 @@ function renderizar() {
 vi.mock('@/hooks/usePerfil', () => ({ usePerfil: () => ({ nome: 'Dra. Ana', login: 'ana' }) }))
 
 afterEach(() => {
+  vi.useRealTimers()
   encerrarSessao()
   vi.restoreAllMocks()
 })
@@ -82,5 +84,18 @@ describe('InicioPage', () => {
 
     expect(screen.queryByText('Exames e consultas de hoje')).not.toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [9, 'Bom dia, Dra. Ana'],
+    [14, 'Boa tarde, Dra. Ana'],
+    [21, 'Boa noite, Dra. Ana'],
+  ])('às %ih cumprimenta com "%s"', (hora, saudacao) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2030, 0, 15, hora))
+    entrarComo('ADMIN')
+    renderizar()
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(saudacao)
   })
 })

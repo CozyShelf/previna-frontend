@@ -109,4 +109,49 @@ describe('FormPrimeiroAcessoEmpresa', () => {
       'blob:logo',
     )
   })
+
+  it('mostra o erro de cada campo obrigatório ao enviar vazio', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch')
+    renderizar()
+
+    await usuario.click(screen.getByRole('button', { name: /salvar e continuar/i }))
+
+    expect(screen.getByText('Informe o novo login.')).toBeInTheDocument()
+    expect(screen.getByText('Crie uma senha.')).toBeInTheDocument()
+    expect(screen.getByText('Repita a nova senha.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Novo login')).toHaveFocus()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('envia a descrição quando preenchida e não manda logo vazio', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ token: 'novo-token' })))
+    renderizar()
+
+    await usuario.type(screen.getByLabelText('Descrição'), 'Fraldas e roupinhas')
+    await preencher('senhaNova1')
+
+    expect(await screen.findByText('Tutorial')).toBeInTheDocument()
+    const corpo = fetch.mock.calls[0]?.[1]?.body as FormData
+    expect(corpo.get('descricao')).toBe('Fraldas e roupinhas')
+    expect(corpo.has('logo')).toBe(false)
+  })
+
+  it.each([
+    [409, 'Este login já está em uso. Escolha outro.'],
+    [400, 'O servidor não aceitou os dados ou o logo. Confira os campos e tente novamente.'],
+    [413, 'A imagem do logo é grande demais. Escolha uma com até 2 MB.'],
+    [500, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'],
+  ])('com resposta %i da API, avisa e não troca o token', async (status, mensagem) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status }))
+    renderizar()
+
+    await preencher('senhaNova1')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
+    expect(localStorage.getItem('previna.token')).toBeNull()
+    expect(screen.queryByText('Tutorial')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /salvar e continuar/i })).toBeEnabled()
+  })
 })
