@@ -38,7 +38,9 @@ describe('PreCadastroGestantePage', () => {
     expect(await screen.findByRole('heading', { name: 'Gestante cadastrada' })).toBeInTheDocument()
     expect(screen.getByText('Login').nextSibling).toHaveTextContent('52998224725')
     expect(screen.getByText('Senha temporária').nextSibling).toHaveTextContent('Tmp#1234')
-    expect(screen.getByText(/a senha não poderá ser consultada novamente/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/até o primeiro acesso dela, você pode consultá-los de novo/i),
+    ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Voltar para gestantes' })).toHaveAttribute(
       'href',
       '/gestantes',

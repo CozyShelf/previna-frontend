@@ -32,8 +32,8 @@ export function CredenciaisTemporarias({
         <div className="flex flex-col gap-1">
           <h2 className="text-base font-semibold text-zinc-900">Gestante cadastrada</h2>
           <p className="text-zinc-600">
-            Entregue o login e a senha abaixo à gestante. A senha não poderá ser consultada
-            novamente.
+            Entregue o login e a senha abaixo à gestante. Até o primeiro acesso dela, você pode
+            consultá-los de novo na página da gestante.
           </p>
 
           <dl className="mt-4 grid w-fit grid-cols-2 divide-x divide-zinc-200 rounded-md border border-zinc-200">
