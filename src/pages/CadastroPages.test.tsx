@@ -3,8 +3,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CadastroAgendamentoPage } from './CadastroAgendamentoPage'
-import { CadastroCupomPage } from './CadastroCupomPage'
-import { CadastroPromocaoPage } from './CadastroPromocaoPage'
+import { CupomPage } from './CupomPage'
+import { PromocaoPage } from './PromocaoPage'
 
 // Páginas que só juntam o cabeçalho e o formulário (os formulários têm testes próprios)
 afterEach(() => {
@@ -26,7 +26,7 @@ describe('páginas de cadastro', () => {
     expect(await screen.findByRole('button', { name: /salvar|cadastrar/i })).toBeInTheDocument()
   })
 
-  it('CadastroCupomPage mostra o formulário do cupom', async () => {
+  it('CupomPage sem id mostra o cadastro do cupom', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -40,7 +40,7 @@ describe('páginas de cadastro', () => {
     )
     render(
       <MemoryRouter>
-        <CadastroCupomPage />
+        <CupomPage />
       </MemoryRouter>,
     )
 
@@ -48,10 +48,10 @@ describe('páginas de cadastro', () => {
     expect(await screen.findByLabelText('Produto')).toBeInTheDocument()
   })
 
-  it('CadastroPromocaoPage mostra o formulário da promoção', () => {
+  it('PromocaoPage sem id mostra o cadastro da promoção', () => {
     render(
       <MemoryRouter>
-        <CadastroPromocaoPage />
+        <PromocaoPage />
       </MemoryRouter>,
     )
 

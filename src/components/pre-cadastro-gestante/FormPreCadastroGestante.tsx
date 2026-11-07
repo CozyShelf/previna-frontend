@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post } from '@/lib/api'
+import { hoje } from '@/lib/datas'
 import { mascararCpf, mascararTelefone, somenteDigitos } from '@/lib/mascaras'
 import { erroCpf, erroEmail } from '@/lib/validacoes'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
@@ -19,7 +20,6 @@ export interface FormPreCadastroGestanteProps {
 
 type Campo = 'nome' | 'cpf' | 'dataNascimento' | 'telefone' | 'email' | 'dum'
 
-const hoje = () => new Date().toISOString().slice(0, 10)
 const dataInvalida = (valor: string) => !/^\d{4}-\d{2}-\d{2}$/.test(valor) || valor < '1900-01-01'
 
 // Mesmas regras do PreCadastroGestanteRequest no backend, com a mensagem do que corrigir
