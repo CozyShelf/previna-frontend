@@ -6,7 +6,7 @@ import { Avatar } from '@/components/sistema/Avatar'
 import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { mascararCpf } from '@/lib/mascaras'
-import BUTTON_CLASSES from '@/types/ButtonClasses'
+import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
 const FILTRO_ACESSO: FiltroListagem = {
   nome: 'verTodasGestantes',
@@ -94,7 +94,7 @@ function TabelaMedicos({ medicos }: { medicos: Medico[] }) {
                 <Link
                   to={`/medicos/${medico.id}`}
                   aria-label={`Editar ${medico.nome}`}
-                  className="font-medium text-previna-600 hover:text-previna-700"
+                  className={ACAO_LISTAGEM.editar}
                 >
                   Editar
                 </Link>

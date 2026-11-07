@@ -4,6 +4,8 @@ import { RotaProtegida } from '@/components/RotaProtegida'
 import type { HandleRota } from '@/components/sistema/Trilha'
 import { AppLayout } from '@/layouts/AppLayout'
 import { SistemaLayout } from '@/layouts/SistemaLayout'
+import { ConteudoPage } from '@/pages/ConteudoPage'
+import { ConteudosPage } from '@/pages/ConteudosPage'
 import { CupomPage } from '@/pages/CupomPage'
 import { CuponsPage } from '@/pages/CuponsPage'
 import { EmpresasPage } from '@/pages/EmpresasPage'
@@ -65,6 +67,15 @@ export const router = createBrowserRouter([
               { index: true, element: <TiposAtendimentoPage /> },
               { path: 'novo', element: <TipoAtendimentoPage />, handle: titulo('Cadastro') },
               { path: ':id', element: <TipoAtendimentoPage />, handle: titulo('Edição') },
+            ],
+          },
+          {
+            path: 'conteudos',
+            handle: titulo('Conteúdo educativo'),
+            children: [
+              { index: true, element: <ConteudosPage /> },
+              { path: 'novo', element: <ConteudoPage />, handle: titulo('Cadastro') },
+              { path: ':id', element: <ConteudoPage />, handle: titulo('Edição') },
             ],
           },
           {

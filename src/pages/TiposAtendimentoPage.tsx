@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
 import type { FiltroListagem } from '@/components/sistema/Listagem'
 import { Listagem } from '@/components/sistema/Listagem'
@@ -9,9 +11,10 @@ import {
   OPCOES_CATEGORIA,
   type TipoAtendimento,
 } from '@/components/tipo-atendimento/categorias'
-import BUTTON_CLASSES from '@/types/ButtonClasses'
+import { del } from '@/lib/api'
+import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
-const COLUNAS = ['Tipo', 'Categoria', 'Pontuação', 'Status']
+const COLUNAS = ['Tipo', 'Categoria', 'Pontuação']
 
 const FILTRO_CATEGORIA: FiltroListagem = {
   nome: 'categoria',
@@ -20,8 +23,34 @@ const FILTRO_CATEGORIA: FiltroListagem = {
 }
 
 export function TiposAtendimentoPage() {
-  // Confirmação deixada pelo formulário ao voltar para a lista
-  const mensagem = (useLocation().state as { mensagem?: string } | null)?.mensagem
+  // Confirmação deixada pelo formulário ao voltar para a lista, ou pela exclusão feita aqui
+  const [mensagem, setMensagem] = useState(
+    (useLocation().state as { mensagem?: string } | null)?.mensagem,
+  )
+  const [erro, setErro] = useState<string>()
+  const [excluindo, setExcluindo] = useState<number>()
+
+  async function excluir(tipo: TipoAtendimento, recarregar: () => void) {
+    if (
+      !window.confirm(
+        `Excluir o tipo ${tipo.nome}? Ele some da lista de escolha; os exames e consultas já marcados nele continuam no histórico da gestante.`,
+      )
+    )
+      return
+
+    setMensagem(undefined)
+    setErro(undefined)
+    setExcluindo(tipo.id)
+    try {
+      await del(`/tipos-atendimento/${tipo.id}`)
+      setMensagem(`Tipo ${tipo.nome} excluído com sucesso.`)
+      recarregar()
+    } catch {
+      setErro(`Não foi possível excluir o tipo ${tipo.nome}. Tente novamente.`)
+    } finally {
+      setExcluindo(undefined)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,6 +70,7 @@ export function TiposAtendimentoPage() {
           {mensagem}
         </p>
       )}
+      {erro && <Alerta mensagem={erro} />}
       <Listagem<TipoAtendimento>
         caminho="/tipos-atendimento/meus"
         descricaoBusca="Buscar pelo nome"
@@ -52,13 +82,26 @@ export function TiposAtendimentoPage() {
           </p>
         }
       >
-        {(tipos) => <TabelaTipos tipos={tipos} />}
+        {(tipos, recarregar) => (
+          <TabelaTipos
+            tipos={tipos}
+            excluindo={excluindo}
+            onExcluir={(tipo) => excluir(tipo, recarregar)}
+          />
+        )}
       </Listagem>
     </div>
   )
 }
 
-function TabelaTipos({ tipos }: { tipos: TipoAtendimento[] }) {
+interface TabelaTiposProps {
+  tipos: TipoAtendimento[]
+  // Id do tipo cuja exclusão está em andamento
+  excluindo?: number
+  onExcluir: (tipo: TipoAtendimento) => void
+}
+
+function TabelaTipos({ tipos, excluindo, onExcluir }: TabelaTiposProps) {
   return (
     <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <table className="w-full text-left">
@@ -80,23 +123,25 @@ function TabelaTipos({ tipos }: { tipos: TipoAtendimento[] }) {
               <td className="py-3 pr-4 pl-6 font-medium text-zinc-900">{tipo.nome}</td>
               <td className="px-4 py-3 text-zinc-700">{CATEGORIAS[tipo.categoria]}</td>
               <td className="px-4 py-3 text-zinc-700 tabular-nums">{tipo.pontosBase}</td>
-              <td className="px-4 py-3">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    tipo.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-600'
-                  }`}
-                >
-                  {tipo.ativo ? 'Ativo' : 'Inativo'}
-                </span>
-              </td>
               <td className="py-3 pr-6 text-right">
-                <Link
-                  to={`/tipos-atendimento/${tipo.id}`}
-                  aria-label={`Editar ${tipo.nome}`}
-                  className="font-medium text-previna-600 hover:text-previna-700"
-                >
-                  Editar
-                </Link>
+                <div className="flex items-center justify-end gap-4">
+                  <Link
+                    to={`/tipos-atendimento/${tipo.id}`}
+                    aria-label={`Editar ${tipo.nome}`}
+                    className={ACAO_LISTAGEM.editar}
+                  >
+                    Editar
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label={`Excluir ${tipo.nome}`}
+                    disabled={excluindo !== undefined}
+                    onClick={() => onExcluir(tipo)}
+                    className={ACAO_LISTAGEM.excluir}
+                  >
+                    {excluindo === tipo.id ? 'Excluindo…' : 'Excluir'}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

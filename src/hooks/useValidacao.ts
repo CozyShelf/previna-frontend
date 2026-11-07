@@ -6,7 +6,7 @@ export type Validacoes<C extends string> = Record<
   (valor: string, dados: FormData) => string | undefined
 >
 
-type Elemento = HTMLInputElement | HTMLSelectElement
+type Elemento = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
 
 export interface PropsCampo {
   name: string

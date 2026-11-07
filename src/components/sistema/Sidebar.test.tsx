@@ -37,6 +37,7 @@ describe('Sidebar', () => {
         ['Início', '/'],
         ['Médicos', '/medicos'],
         ['Empresas parceiras', '/empresas'],
+        ['Conteúdo educativo', '/conteudos'],
       ],
     ],
     [

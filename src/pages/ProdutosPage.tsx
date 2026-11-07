@@ -9,7 +9,7 @@ import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { urlDaApi } from '@/lib/api'
 import { formatarPreco } from '@/lib/mascaras'
-import BUTTON_CLASSES from '@/types/ButtonClasses'
+import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
 const COLUNAS = ['Produto', 'Categoria', 'Preço sem desconto']
 
@@ -96,7 +96,7 @@ function TabelaProdutos({ produtos }: { produtos: Produto[] }) {
                 <Link
                   to={`/produtos/${produto.id}`}
                   aria-label={`Editar ${produto.nome}`}
-                  className="font-medium text-previna-600 hover:text-previna-700"
+                  className={ACAO_LISTAGEM.editar}
                 >
                   Editar
                 </Link>

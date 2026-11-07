@@ -15,7 +15,6 @@ const TIPO: TipoAtendimento = {
   nome: 'Ultrassom 4D',
   categoria: 'EXAME',
   pontosBase: 30,
-  ativo: true,
   padrao: false,
 }
 
@@ -96,25 +95,12 @@ describe('FormTipoAtendimento', () => {
     expect(screen.getByRole('button', { name: 'Cadastrar tipo' })).toBeEnabled()
   })
 
-  it('exclui o tipo ainda não usado e volta à lista', async () => {
-    const fetch = responder(200)
+  // A exclusão fica na listagem (TiposAtendimentoPage), não no formulário
+  it('na edição vem preenchido e só salva, sem excluir', () => {
     renderizar(TIPO)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Excluir' }))
-
-    expect(await screen.findByText('Tipo Ultrassom 4D excluído com sucesso.')).toBeInTheDocument()
-    expect(fetch.mock.calls[0]?.[0]).toMatch(/\/tipos-atendimento\/10$/)
-    expect(fetch.mock.calls[0]?.[1]?.method).toBe('DELETE')
-  })
-
-  it('avisa quando não consegue excluir e libera os botões', async () => {
-    responder(500)
-    renderizar(TIPO)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Excluir' }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível salvar.')
-    expect(screen.getByRole('button', { name: 'Excluir' })).toBeEnabled()
+    expect(screen.getByLabelText('Nome')).toHaveValue('Ultrassom 4D')
     expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument()
   })
 })
