@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useValidacao, type PropsCampo, type Validacoes } from '@/hooks/useValidacao'
-import { ApiError, get, post, type Pagina } from '@/lib/api'
+import { ApiError, get, post, put, type Pagina } from '@/lib/api'
 import { hoje } from '@/lib/datas'
 import { decimalDaApi, formatarPreco } from '@/lib/mascaras'
 import { erroDesconto } from '@/lib/validacoes'
@@ -22,6 +22,7 @@ export interface Cupom {
   descricao: string
   // Nome do produto
   produto: string
+  idProduto: number
   // Percentual
   desconto: number
   dataValidade: string
@@ -46,7 +47,12 @@ const VALIDACOES: Validacoes<Campo> = {
   },
 }
 
-export function FormCupom() {
+export interface FormCupomProps {
+  // Presente na edição
+  cupom?: Cupom
+}
+
+export function FormCupom({ cupom }: FormCupomProps) {
   const navigate = useNavigate()
   const [produtos, setProdutos] = useState<Produto[]>()
   const [erroCarga, setErroCarga] = useState(false)
@@ -55,7 +61,7 @@ export function FormCupom() {
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   useEffect(() => {
-    // shortcut: a escolha mostra só os 100 primeiros produtos (máximo por página da API); trocar por busca quando as empresas tiverem mais
+    // shortcut: a escolha mostra só os 100 primeiros produtos (máximo por página da API), e na edição um produto fora deles precisa ser escolhido de novo; trocar por busca quando as empresas tiverem mais
     get<Pagina<Produto>>('/empresas/produtos?tamanho=100')
       .then((pagina) => setProdutos(pagina.itens))
       .catch(() => setErroCarga(true))
@@ -73,9 +79,14 @@ export function FormCupom() {
         dataValidade: dados.get('dataValidade'),
         pontosNecessarios: Number(dados.get('pontosNecessarios')),
       }
-      const cupom = await post<Cupom>('/empresas/cupons', corpo)
+      // A situação (ativo) não vai: na edição continua a mesma
+      const salvo = cupom
+        ? await put<Cupom>(`/empresas/cupons/${cupom.id}`, corpo)
+        : await post<Cupom>('/empresas/cupons', corpo)
       navigate('/cupons', {
-        state: { mensagem: `Cupom “${cupom.descricao}” cadastrado com sucesso.` },
+        state: {
+          mensagem: `Cupom “${salvo.descricao}” ${cupom ? 'atualizado' : 'cadastrado'} com sucesso.`,
+        },
       })
     } catch (e) {
       setErro(mensagemDeErro(e))
@@ -111,7 +122,11 @@ export function FormCupom() {
         titulo="Produto"
         descricao="O cupom vale só para este produto. Para dar desconto em uma categoria inteira, crie uma promoção."
       >
-        <EscolhaProduto produtos={produtos} campo={campo('produto')} />
+        <EscolhaProduto
+          produtos={produtos}
+          campo={campo('produto')}
+          atual={cupom && String(cupom.idProduto)}
+        />
       </SecaoFormulario>
 
       <SecaoFormulario
@@ -121,6 +136,7 @@ export function FormCupom() {
         <InputGroup
           labelTxt="Desconto (%)"
           {...campo('desconto')}
+          defaultValue={cupom && String(cupom.desconto).replace('.', ',')}
           placeholder="Ex.: 15"
           inputMode="decimal"
           maxLength={6}
@@ -129,6 +145,7 @@ export function FormCupom() {
         <InputGroup
           labelTxt="Validade"
           {...campo('dataValidade')}
+          defaultValue={cupom?.dataValidade}
           type="date"
           min={hoje()}
           required
@@ -136,6 +153,7 @@ export function FormCupom() {
         <InputGroup
           labelTxt="Pontos para resgatar"
           {...campo('pontosNecessarios')}
+          defaultValue={cupom?.pontosNecessarios}
           inputMode="numeric"
           maxLength={6}
           required
@@ -152,7 +170,7 @@ export function FormCupom() {
           Cancelar
         </Link>
         <Button
-          label={enviando ? 'Salvando…' : 'Cadastrar cupom'}
+          label={enviando ? 'Salvando…' : cupom ? 'Salvar alterações' : 'Cadastrar cupom'}
           style="primary"
           type="submit"
           disabled={enviando}
@@ -172,12 +190,22 @@ function LinkCadastrarProduto() {
 }
 
 // O cupom usa os produtos já cadastrados (nome, foto e dados básicos vêm do cadastro de produto)
-function EscolhaProduto({ produtos, campo }: { produtos: Produto[]; campo: PropsCampo }) {
+function EscolhaProduto({
+  produtos,
+  campo,
+  atual,
+}: {
+  produtos: Produto[]
+  campo: PropsCampo
+  // Id do produto já escolhido, na edição
+  atual?: string
+}) {
   return (
     <>
       <SelectGroup
         labelTxt="Produto"
         {...campo}
+        defaultValue={atual}
         opcoes={produtos.map((produto) => ({
           valor: String(produto.id),
           rotulo:

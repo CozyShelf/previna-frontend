@@ -107,7 +107,14 @@ function LinhaCupom({ cupom }: { cupom: Cupom }) {
           </span>
         )}
       </td>
-      <td className="py-3 pr-6 text-right">
+      <td className="py-3 pr-6 text-right whitespace-nowrap">
+        <Link
+          to={`/cupons/${cupom.id}`}
+          aria-label={`Editar ${cupom.descricao}`}
+          className="mr-4 font-medium text-previna-600 hover:text-previna-700"
+        >
+          Editar
+        </Link>
         <button
           type="button"
           onClick={alternar}

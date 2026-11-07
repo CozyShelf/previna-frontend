@@ -3,17 +3,17 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { FormPromocao } from './FormPromocao'
+import { FormPromocao, type Promocao } from './FormPromocao'
 
 function Lista() {
   return <p>{(useLocation().state as { mensagem: string }).mensagem}</p>
 }
 
-function renderizar() {
+function renderizar(promocao?: Promocao) {
   render(
     <MemoryRouter initialEntries={['/form']}>
       <Routes>
-        <Route path="/form" element={<FormPromocao />} />
+        <Route path="/form" element={<FormPromocao promocao={promocao} />} />
         <Route path="/promocoes" element={<Lista />} />
       </Routes>
     </MemoryRouter>,
@@ -54,6 +54,40 @@ describe('FormPromocao', () => {
     })
     expect(
       await screen.findByText('Promoção Semana do bebê cadastrada com sucesso.'),
+    ).toBeInTheDocument()
+  })
+
+  it('na edição, traz os dados da promoção e salva com PUT', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }))
+    renderizar({
+      id: 3,
+      titulo: 'Semana do bebê',
+      descricao: 'Só esta semana',
+      desconto: 12.5,
+      dataInicio: dataLocal(-2),
+      dataFim: dataLocal(7),
+      categoria: 'ROUPAS',
+    })
+
+    expect(screen.getByLabelText('Categoria')).toHaveValue('ROUPAS')
+    expect(screen.getByLabelText('Desconto (%)')).toHaveValue('12,5')
+    // Apagada, a descrição não vai e o backend a grava nula
+    await userEvent.clear(screen.getByLabelText('Descrição'))
+    await userEvent.click(screen.getByRole('button', { name: /salvar alterações/i }))
+
+    expect(fetch.mock.calls[0]?.[0]).toMatch(/\/empresas\/promocoes\/3$/)
+    expect(fetch.mock.calls[0]?.[1]?.method).toBe('PUT')
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toEqual({
+      titulo: 'Semana do bebê',
+      desconto: 12.5,
+      dataInicio: dataLocal(-2),
+      dataFim: dataLocal(7),
+      categoria: 'ROUPAS',
+    })
+    expect(
+      await screen.findByText('Promoção Semana do bebê atualizada com sucesso.'),
     ).toBeInTheDocument()
   })
 
