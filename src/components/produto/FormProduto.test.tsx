@@ -90,4 +90,56 @@ describe('FormProduto', () => {
     expect(corpo.has('imagem')).toBe(false)
     expect(await screen.findByText('Produto Fralda P atualizado com sucesso.')).toBeInTheDocument()
   })
+
+  it('envia a imagem escolhida e a descrição preenchida', async () => {
+    const FormDataOriginal = FormData
+    vi.stubGlobal(
+      'FormData',
+      class extends FormDataOriginal {
+        constructor(form?: HTMLFormElement) {
+          super(form)
+          const input = form?.querySelector<HTMLInputElement>('input[type=file]')
+          if (input?.files?.[0]) this.set(input.name, input.files[0])
+        }
+      },
+    )
+    URL.createObjectURL = vi.fn(() => 'blob:imagem')
+    URL.revokeObjectURL = vi.fn()
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ id: 1 }), { status: 201 }))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Nome'), 'Fralda RN')
+    await userEvent.type(screen.getByLabelText('Descrição'), 'Pacote com 30')
+    await userEvent.upload(
+      screen.getByLabelText('Imagem'),
+      new File([new Uint8Array(10)], 'fralda.png', { type: 'image/png' }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: /cadastrar produto/i }))
+
+    expect(await screen.findByText('Produto Fralda RN cadastrado com sucesso.')).toBeInTheDocument()
+    const corpo = fetch.mock.calls[0]?.[1]?.body as FormData
+    expect(corpo.get('descricao')).toBe('Pacote com 30')
+    expect(corpo.get('imagem')).toBeInstanceOf(File)
+    // Sem preço nem categoria, os campos não vão
+    expect(corpo.has('preco')).toBe(false)
+    expect(corpo.has('categoria')).toBe(false)
+    vi.unstubAllGlobals()
+  })
+
+  it.each([
+    [400, 'O servidor não aceitou os dados ou a imagem. Confira os campos e tente novamente.'],
+    [413, 'A imagem é grande demais. Escolha uma com até 2 MB.'],
+    [500, 'Não foi possível salvar. Verifique sua conexão e tente novamente.'],
+  ])('com resposta %i ao salvar, avisa e libera o botão', async (status, mensagem) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status }))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Nome'), 'Fralda RN')
+    await userEvent.click(screen.getByRole('button', { name: /cadastrar produto/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
+    expect(screen.getByRole('button', { name: /cadastrar produto/i })).toBeEnabled()
+  })
 })

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
-import { ApiError, post } from '@/lib/api'
+import { ApiError, post, put } from '@/lib/api'
 import { hoje } from '@/lib/datas'
 import { decimalDaApi } from '@/lib/mascaras'
 import { erroDesconto } from '@/lib/validacoes'
@@ -43,7 +43,12 @@ const VALIDACOES: Validacoes<Campo> = {
   categoria: (valor) => (valor ? undefined : 'Escolha a categoria.'),
 }
 
-export function FormPromocao() {
+export interface FormPromocaoProps {
+  // Presente na edição
+  promocao?: Promocao
+}
+
+export function FormPromocao({ promocao }: FormPromocaoProps) {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
   const [enviando, setEnviando] = useState(false)
@@ -63,9 +68,12 @@ export function FormPromocao() {
         dataFim: dados.get('dataFim'),
         categoria: dados.get('categoria'),
       }
-      await post('/empresas/promocoes', corpo)
+      if (promocao) await put(`/empresas/promocoes/${promocao.id}`, corpo)
+      else await post('/empresas/promocoes', corpo)
       navigate('/promocoes', {
-        state: { mensagem: `Promoção ${corpo.titulo} cadastrada com sucesso.` },
+        state: {
+          mensagem: `Promoção ${corpo.titulo} ${promocao ? 'atualizada' : 'cadastrada'} com sucesso.`,
+        },
       })
     } catch (e) {
       setErro(mensagemDeErro(e))
@@ -83,6 +91,7 @@ export function FormPromocao() {
         <InputGroup
           labelTxt="Título"
           {...campo('titulo')}
+          defaultValue={promocao?.titulo}
           maxLength={150}
           required
           autoFocus
@@ -91,6 +100,7 @@ export function FormPromocao() {
         <InputGroup
           labelTxt="Descrição"
           name="descricao"
+          defaultValue={promocao?.descricao}
           hint="Opcional"
           maxLength={1000}
           className="col-span-2"
@@ -98,6 +108,7 @@ export function FormPromocao() {
         <InputGroup
           labelTxt="Desconto (%)"
           {...campo('desconto')}
+          defaultValue={promocao && String(promocao.desconto).replace('.', ',')}
           placeholder="Ex.: 15"
           inputMode="decimal"
           maxLength={6}
@@ -106,6 +117,7 @@ export function FormPromocao() {
         <SelectGroup
           labelTxt="Categoria"
           {...campo('categoria')}
+          defaultValue={promocao?.categoria}
           opcoes={OPCOES_CATEGORIA}
           vazio="Escolha…"
           required
@@ -116,8 +128,21 @@ export function FormPromocao() {
         titulo="Vigência"
         descricao="A promoção vale do início ao fim, incluindo os dois dias."
       >
-        <InputGroup labelTxt="Início" {...campo('dataInicio')} type="date" required />
-        <InputGroup labelTxt="Fim" {...campo('dataFim')} type="date" min={hoje()} required />
+        <InputGroup
+          labelTxt="Início"
+          {...campo('dataInicio')}
+          defaultValue={promocao?.dataInicio}
+          type="date"
+          required
+        />
+        <InputGroup
+          labelTxt="Fim"
+          {...campo('dataFim')}
+          defaultValue={promocao?.dataFim}
+          type="date"
+          min={hoje()}
+          required
+        />
       </SecaoFormulario>
 
       <div className="flex items-center justify-end gap-3 rounded-b-lg bg-zinc-50 px-6 py-4">
@@ -130,7 +155,7 @@ export function FormPromocao() {
           Cancelar
         </Link>
         <Button
-          label={enviando ? 'Salvando…' : 'Cadastrar promoção'}
+          label={enviando ? 'Salvando…' : promocao ? 'Salvar alterações' : 'Cadastrar promoção'}
           style="primary"
           type="submit"
           disabled={enviando}

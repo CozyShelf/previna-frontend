@@ -1,6 +1,7 @@
 import { formatarData, idadeGestacional } from '@/lib/datas'
 import { mascararCpf, mascararTelefone } from '@/lib/mascaras'
 import { SituacaoConta } from '@/components/sistema/SituacaoConta'
+import type { Credenciais } from '@/components/pre-cadastro-gestante/CredenciaisTemporarias'
 
 export interface Gestante {
   id: number
@@ -15,6 +16,8 @@ export interface Gestante {
   primeiroAcessoPendente: boolean
   // Nome do médico responsável
   medico: string
+  // A API só envia enquanto o primeiro acesso está pendente
+  credenciaisTemporarias?: Credenciais
 }
 
 export interface DadosGestanteProps {
@@ -31,6 +34,12 @@ export function DadosGestante({ gestante }: DadosGestanteProps) {
     { rotulo: 'Data provável do parto', valor: formatarData(gestante.dataProvavelParto) },
     { rotulo: 'Pontos', valor: String(gestante.saldoPontos) },
     { rotulo: 'Médico responsável', valor: gestante.medico },
+    ...(gestante.credenciaisTemporarias
+      ? [
+          { rotulo: 'Login temporário', valor: gestante.credenciaisTemporarias.login },
+          { rotulo: 'Senha temporária', valor: gestante.credenciaisTemporarias.senha },
+        ]
+      : []),
   ]
 
   return (

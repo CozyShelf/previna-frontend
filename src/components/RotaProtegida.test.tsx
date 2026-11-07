@@ -18,6 +18,7 @@ function renderizar() {
           <Route path="/" element={<p>Painel</p>} />
         </Route>
         <Route path="/primeiro-acesso" element={<p>Primeiro acesso</p>} />
+        <Route path="/login" element={<p>Tela de login</p>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -28,6 +29,13 @@ afterEach(() => {
 })
 
 describe('RotaProtegida', () => {
+  it('leva ao login quem não tem sessão', () => {
+    renderizar()
+
+    expect(screen.getByText('Tela de login')).toBeInTheDocument()
+    expect(screen.queryByText('Painel')).not.toBeInTheDocument()
+  })
+
   it('leva quem ainda usa a senha temporária ao primeiro acesso', () => {
     salvarToken(token(true))
     renderizar()
