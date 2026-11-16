@@ -25,6 +25,8 @@ export interface Promocao {
   dataFim: string
   // Vale para todos os produtos da empresa nesta categoria
   categoria: Categoria
+  // Inativa não aparece para as gestantes, mesmo dentro do período
+  ativo: boolean
 }
 
 type Campo = 'titulo' | 'desconto' | 'dataInicio' | 'dataFim' | 'categoria'

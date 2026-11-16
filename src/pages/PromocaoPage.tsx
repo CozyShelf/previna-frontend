@@ -27,7 +27,7 @@ export function PromocaoPage() {
         titulo={id ? 'Editar promoção' : 'Cadastrar promoção'}
         descricao={
           id
-            ? 'Atualize os dados da promoção. Ela alcança todos os produtos da empresa na categoria escolhida.'
+            ? 'Atualize os dados da promoção. Ela alcança todos os produtos da empresa na categoria escolhida. A situação (ativa ou inativa) continua a mesma.'
             : 'Escolha a categoria, o desconto e o período em que a promoção vale. Ela alcança todos os produtos da empresa nessa categoria.'
         }
       />
