@@ -11,6 +11,7 @@ import {
   OPCOES_CATEGORIA,
   type TipoAtendimento,
 } from '@/components/tipo-atendimento/categorias'
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { del } from '@/lib/api'
 import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
@@ -29,27 +30,30 @@ export function TiposAtendimentoPage() {
   )
   const [erro, setErro] = useState<string>()
   const [excluindo, setExcluindo] = useState<number>()
+  const { enviar } = useEnvioUnico()
 
   async function excluir(tipo: TipoAtendimento, recarregar: () => void) {
-    if (
-      !window.confirm(
-        `Excluir o tipo ${tipo.nome}? Ele some da lista de escolha; os exames e consultas já marcados nele continuam no histórico da gestante.`,
+    await enviar(async () => {
+      if (
+        !window.confirm(
+          `Excluir o tipo ${tipo.nome}? Ele some da lista de escolha; os exames e consultas já marcados nele continuam no histórico da gestante.`,
+        )
       )
-    )
-      return
+        return
 
-    setMensagem(undefined)
-    setErro(undefined)
-    setExcluindo(tipo.id)
-    try {
-      await del(`/tipos-atendimento/${tipo.id}`)
-      setMensagem(`Tipo ${tipo.nome} excluído com sucesso.`)
-      recarregar()
-    } catch {
-      setErro(`Não foi possível excluir o tipo ${tipo.nome}. Tente novamente.`)
-    } finally {
-      setExcluindo(undefined)
-    }
+      setMensagem(undefined)
+      setErro(undefined)
+      setExcluindo(tipo.id)
+      try {
+        await del(`/tipos-atendimento/${tipo.id}`)
+        setMensagem(`Tipo ${tipo.nome} excluído com sucesso.`)
+        recarregar()
+      } catch {
+        setErro(`Não foi possível excluir o tipo ${tipo.nome}. Tente novamente.`)
+      } finally {
+        setExcluindo(undefined)
+      }
+    })
   }
 
   return (

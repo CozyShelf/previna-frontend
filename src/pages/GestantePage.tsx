@@ -7,6 +7,7 @@ import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
 import { DadosGestante, type Gestante } from '@/components/gestante/DadosGestante'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { ApiError, get, put } from '@/lib/api'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 
@@ -19,7 +20,9 @@ export function GestantePage() {
   const [gestante, setGestante] = useState<Gestante>()
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>()
   const [erro, setErro] = useState(false)
+  // Id do item em andamento, para a lista; a guarda contra o clique duplo fica no useEnvioUnico
   const [resolvendo, setResolvendo] = useState<number>()
+  const { enviar } = useEnvioUnico()
   const [erroAcao, setErroAcao] = useState<string>()
   const [aviso, setAviso] = useState<string>()
 
@@ -43,33 +46,39 @@ export function GestantePage() {
 
   // Confirmar credita os pontos do tipo; não comparecer só registra o fato
   async function resolver(id: number, status: Exclude<StatusAgendamento, 'AGENDADO'>) {
-    const confirmando = status === 'REALIZADO'
-    setErroAcao(undefined)
-    setAviso(undefined)
-    setResolvendo(id)
-    try {
-      const caminho = `/agendamentos/${id}/${confirmando ? 'confirmar' : 'nao-compareceu'}`
-      const resposta = confirmando
-        ? await put<{ agendamento: Agendamento; pontosCreditados: number; saldoPontos: number }>(
-            caminho,
-            {},
-          )
-        : { agendamento: await put<Agendamento>(caminho, {}), pontosCreditados: 0, saldoPontos: 0 }
+    await enviar(async () => {
+      const confirmando = status === 'REALIZADO'
+      setErroAcao(undefined)
+      setAviso(undefined)
+      setResolvendo(id)
+      try {
+        const caminho = `/agendamentos/${id}/${confirmando ? 'confirmar' : 'nao-compareceu'}`
+        const resposta = confirmando
+          ? await put<{ agendamento: Agendamento; pontosCreditados: number; saldoPontos: number }>(
+              caminho,
+              {},
+            )
+          : {
+              agendamento: await put<Agendamento>(caminho, {}),
+              pontosCreditados: 0,
+              saldoPontos: 0,
+            }
 
-      setAgendamentos((atuais) =>
-        atuais?.map((item) => (item.id === id ? resposta.agendamento : item)),
-      )
-      if (confirmando) {
-        setGestante((atual) => atual && { ...atual, saldoPontos: resposta.saldoPontos })
-        setAviso(`Presença confirmada e ${resposta.pontosCreditados} pontos creditados.`)
-      } else {
-        setAviso('Não comparecimento registrado.')
+        setAgendamentos((atuais) =>
+          atuais?.map((item) => (item.id === id ? resposta.agendamento : item)),
+        )
+        if (confirmando) {
+          setGestante((atual) => atual && { ...atual, saldoPontos: resposta.saldoPontos })
+          setAviso(`Presença confirmada e ${resposta.pontosCreditados} pontos creditados.`)
+        } else {
+          setAviso('Não comparecimento registrado.')
+        }
+      } catch (e) {
+        setErroAcao(mensagemDeErro(e))
+      } finally {
+        setResolvendo(undefined)
       }
-    } catch (e) {
-      setErroAcao(mensagemDeErro(e))
-    } finally {
-      setResolvendo(undefined)
-    }
+    })
   }
 
   const cadastrar = (

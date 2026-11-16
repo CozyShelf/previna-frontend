@@ -9,7 +9,7 @@ const GRUPOS: StatusAgendamento[] = ['AGENDADO', 'REALIZADO', 'NAO_COMPARECEU']
 export interface ListaAgendamentosProps {
   agendamentos: Agendamento[]
   onResolver: (id: number, status: Exclude<StatusAgendamento, 'AGENDADO'>) => void
-  // Id do item com o PUT em voo: desabilita os dois botões da linha
+  // Id do item com o PUT em voo: desabilita as ações de todas as linhas, uma resolução por vez
   resolvendo?: number
 }
 
@@ -57,13 +57,13 @@ export function ListaAgendamentos({
                       <Button
                         label="Confirmar realização"
                         style="primary"
-                        disabled={resolvendo === agendamento.id}
+                        disabled={resolvendo !== undefined}
                         onClick={() => onResolver(agendamento.id, 'REALIZADO')}
                       />
                       <Button
                         label="Não compareceu"
                         style="secondary"
-                        disabled={resolvendo === agendamento.id}
+                        disabled={resolvendo !== undefined}
                         onClick={() => onResolver(agendamento.id, 'NAO_COMPARECEU')}
                       />
                     </div>
