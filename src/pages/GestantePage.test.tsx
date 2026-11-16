@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -235,5 +235,22 @@ describe('GestantePage', () => {
     expect(
       await screen.findByText('Cadastro de Hemograma completo realizado com sucesso.'),
     ).toBeInTheDocument()
+  })
+
+  it('confirma uma vez só no clique duplo', async () => {
+    const fetch = responderComAcoes()
+    renderizar()
+
+    const confirmar = await screen.findByRole('button', { name: /confirmar realização/i })
+    // Os dois cliques no mesmo tick, antes de o botão desabilitado chegar ao render
+    act(() => {
+      confirmar.click()
+      confirmar.click()
+    })
+
+    expect(
+      await screen.findByText(/presença confirmada e 25 pontos creditados/i),
+    ).toBeInTheDocument()
+    expect(fetch.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(1)
   })
 })

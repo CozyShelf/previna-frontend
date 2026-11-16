@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -102,5 +102,23 @@ describe('FormTipoAtendimento', () => {
     expect(screen.getByLabelText('Nome')).toHaveValue('Ultrassom 4D')
     expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeEnabled()
     expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = responder(201)
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Nome'), 'Ultrassom 4D')
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'EXAME')
+    await userEvent.type(screen.getByLabelText('Pontuação'), '30')
+    const cadastrar = screen.getByRole('button', { name: 'Cadastrar tipo' })
+    // Os dois cliques no mesmo tick, antes de o botão desabilitado chegar ao render
+    act(() => {
+      cadastrar.click()
+      cadastrar.click()
+    })
+
+    expect(await screen.findByText('Tipo Ultrassom 4D cadastrado com sucesso.')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 })
