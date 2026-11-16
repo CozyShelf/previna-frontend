@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, get, put, urlDaApi } from '@/lib/api'
 import { mascararTelefone, somenteDigitos } from '@/lib/mascaras'
@@ -36,7 +37,7 @@ export function FormPerfilEmpresa({ onSalvo }: FormPerfilEmpresaProps) {
   const [versao, setVersao] = useState(0)
   const [erro, setErro] = useState<string>()
   const [salvo, setSalvo] = useState(false)
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   useEffect(() => {
@@ -49,23 +50,22 @@ export function FormPerfilEmpresa({ onSalvo }: FormPerfilEmpresaProps) {
     setSalvo(false)
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      // Vai como multipart por causa do logo
-      dados.set('telefone', somenteDigitos(dados.get('telefone')))
-      const logo = dados.get('logo')
-      if (!(logo instanceof File) || !logo.size) dados.delete('logo')
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        // Vai como multipart por causa do logo
+        dados.set('telefone', somenteDigitos(dados.get('telefone')))
+        const logo = dados.get('logo')
+        if (!(logo instanceof File) || !logo.size) dados.delete('logo')
 
-      setEmpresa(await put<PerfilEmpresa>('/empresas/perfil', dados))
-      setVersao((atual) => atual + 1)
-      setSalvo(true)
-      onSalvo()
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-    } finally {
-      setEnviando(false)
-    }
+        setEmpresa(await put<PerfilEmpresa>('/empresas/perfil', dados))
+        setVersao((atual) => atual + 1)
+        setSalvo(true)
+        onSalvo()
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   if (erroCarga) {

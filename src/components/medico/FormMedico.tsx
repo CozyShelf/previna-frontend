@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post, put } from '@/lib/api'
 import { mascararCpf, somenteDigitos } from '@/lib/mascaras'
@@ -52,37 +53,37 @@ function validacoes(edicao: boolean): Validacoes<Campo> {
 export function FormMedico({ medico }: FormMedicoProps) {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(validacoes(Boolean(medico)))
 
   async function salvar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const corpo = {
-        nome: dados.get('nome'),
-        cpf: somenteDigitos(dados.get('cpf')),
-        crm: dados.get('crm'),
-        email: dados.get('email'),
-        login: dados.get('login'),
-        senha: dados.get('senha') || undefined,
-        verTodasGestantes: dados.get('verTodasGestantes') === 'on',
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const corpo = {
+          nome: dados.get('nome'),
+          cpf: somenteDigitos(dados.get('cpf')),
+          crm: dados.get('crm'),
+          email: dados.get('email'),
+          login: dados.get('login'),
+          senha: dados.get('senha') || undefined,
+          verTodasGestantes: dados.get('verTodasGestantes') === 'on',
+        }
+        if (medico) await put(`/medicos/${medico.id}`, corpo)
+        else await post('/medicos', corpo)
+        navigate('/medicos', {
+          state: {
+            mensagem: medico
+              ? `Dados de ${corpo.nome} atualizados.`
+              : `${corpo.nome} cadastrado. Repasse o login e a senha ao médico.`,
+          },
+        })
+      } catch (e) {
+        setErro(mensagemDeErro(e))
       }
-      if (medico) await put(`/medicos/${medico.id}`, corpo)
-      else await post('/medicos', corpo)
-      navigate('/medicos', {
-        state: {
-          mensagem: medico
-            ? `Dados de ${corpo.nome} atualizados.`
-            : `${corpo.nome} cadastrado. Repasse o login e a senha ao médico.`,
-        },
-      })
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setEnviando(false)
-    }
+    })
   }
 
   return (

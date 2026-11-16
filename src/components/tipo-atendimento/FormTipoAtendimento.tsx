@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post, put } from '@/lib/api'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
@@ -35,31 +36,31 @@ export interface FormTipoAtendimentoProps {
 export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function salvar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const corpo = {
-        nome: String(dados.get('nome')).trim(),
-        categoria: dados.get('categoria'),
-        pontosBase: Number(dados.get('pontosBase')),
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const corpo = {
+          nome: String(dados.get('nome')).trim(),
+          categoria: dados.get('categoria'),
+          pontosBase: Number(dados.get('pontosBase')),
+        }
+        if (tipo) await put(`/tipos-atendimento/${tipo.id}`, corpo)
+        else await post('/tipos-atendimento', corpo)
+        navigate('/tipos-atendimento', {
+          state: {
+            mensagem: `Tipo ${corpo.nome} ${tipo ? 'atualizado' : 'cadastrado'} com sucesso.`,
+          },
+        })
+      } catch (e) {
+        setErro(mensagemDeErro(e))
       }
-      if (tipo) await put(`/tipos-atendimento/${tipo.id}`, corpo)
-      else await post('/tipos-atendimento', corpo)
-      navigate('/tipos-atendimento', {
-        state: {
-          mensagem: `Tipo ${corpo.nome} ${tipo ? 'atualizado' : 'cadastrado'} com sucesso.`,
-        },
-      })
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setEnviando(false)
-    }
+    })
   }
 
   return (

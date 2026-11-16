@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post } from '@/lib/api'
 import { hoje } from '@/lib/datas'
@@ -46,29 +47,28 @@ const VALIDACOES: Validacoes<Campo> = {
 
 export function FormPreCadastroGestante({ onCadastrado }: FormPreCadastroGestanteProps) {
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function cadastrar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const credenciais = await post<Credenciais>('/gestantes/pre-cadastro', {
-        nome: dados.get('nome'),
-        cpf: somenteDigitos(dados.get('cpf')),
-        dataNascimento: dados.get('dataNascimento'),
-        telefone: somenteDigitos(dados.get('telefone')),
-        email: dados.get('email') || undefined,
-        dum: dados.get('dum'),
-      })
-      onCadastrado(credenciais)
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-    } finally {
-      setEnviando(false)
-    }
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const credenciais = await post<Credenciais>('/gestantes/pre-cadastro', {
+          nome: dados.get('nome'),
+          cpf: somenteDigitos(dados.get('cpf')),
+          dataNascimento: dados.get('dataNascimento'),
+          telefone: somenteDigitos(dados.get('telefone')),
+          email: dados.get('email') || undefined,
+          dum: dados.get('dum'),
+        })
+        onCadastrado(credenciais)
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   return (

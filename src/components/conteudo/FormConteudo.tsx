@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, del, post, put, urlDaApi } from '@/lib/api'
 import { erroImagem, TIPOS_IMAGEM } from '@/lib/validacoes'
@@ -51,8 +52,10 @@ export interface FormConteudoProps {
 export function FormConteudo({ conteudo }: FormConteudoProps) {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
-  const [ocupado, setOcupado] = useState(false)
+  // Salvar e as ações avulsas (publicar, excluir) têm guardas próprias; o botão de cada um fica
+  // desabilitado enquanto qualquer um está em andamento
+  const { enviando, enviar } = useEnvioUnico()
+  const { enviando: ocupado, enviar: executarAcao } = useEnvioUnico()
   // Controlado porque decide quais campos de mídia aparecem
   const [tipo, setTipo] = useState<string>(conteudo?.tipo ?? '')
   const temFotoSalva = conteudo?.tipo === 'FOTO' && !!conteudo.midiaUrl
@@ -62,27 +65,27 @@ export function FormConteudo({ conteudo }: FormConteudoProps) {
   async function salvar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      // Vai como multipart por causa da imagem
-      // Opcional em branco não vai, para ficar nulo no banco em vez de texto vazio
-      for (const nome of ['resumo', 'corpo', 'midiaUrl']) {
-        if (!String(dados.get(nome)).trim()) dados.delete(nome)
-      }
-      const imagem = dados.get('imagem')
-      if (!(imagem instanceof File) || !imagem.size) dados.delete('imagem')
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        // Vai como multipart por causa da imagem
+        // Opcional em branco não vai, para ficar nulo no banco em vez de texto vazio
+        for (const nome of ['resumo', 'corpo', 'midiaUrl']) {
+          if (!String(dados.get(nome)).trim()) dados.delete(nome)
+        }
+        const imagem = dados.get('imagem')
+        if (!(imagem instanceof File) || !imagem.size) dados.delete('imagem')
 
-      // Na edição a imagem só é enviada quando trocada; sem ela, o backend mantém a atual
-      if (conteudo) await put(`/conteudos/${conteudo.id}`, dados)
-      else await post('/conteudos', dados)
-      voltar(
-        `Conteúdo ${dados.get('titulo')} ${conteudo ? 'atualizado' : 'cadastrado'} com sucesso.`,
-      )
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setEnviando(false)
-    }
+        // Na edição a imagem só é enviada quando trocada; sem ela, o backend mantém a atual
+        if (conteudo) await put(`/conteudos/${conteudo.id}`, dados)
+        else await post('/conteudos', dados)
+        voltar(
+          `Conteúdo ${dados.get('titulo')} ${conteudo ? 'atualizado' : 'cadastrado'} com sucesso.`,
+        )
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   // Publicar é uma ação à parte do salvar: o conteúdo nasce rascunho e só vai para o app quando o
@@ -104,15 +107,15 @@ export function FormConteudo({ conteudo }: FormConteudoProps) {
   }
 
   async function acao(executar: () => Promise<unknown>, mensagem: string) {
-    setErro(undefined)
-    setOcupado(true)
-    try {
-      await executar()
-      voltar(mensagem)
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setOcupado(false)
-    }
+    await executarAcao(async () => {
+      setErro(undefined)
+      try {
+        await executar()
+        voltar(mensagem)
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   function voltar(mensagem: string) {
