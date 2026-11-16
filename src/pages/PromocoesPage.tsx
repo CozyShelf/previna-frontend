@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 import { Icone } from '@/components/common/Icone'
@@ -5,10 +6,11 @@ import { CATEGORIAS } from '@/components/produto/categorias'
 import type { Promocao } from '@/components/promocao/FormPromocao'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { put } from '@/lib/api'
 import { formatarData } from '@/lib/datas'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 
-const COLUNAS = ['Promoção', 'Categoria', 'Desconto', 'Vigência']
+const COLUNAS = ['Promoção', 'Categoria', 'Desconto', 'Vigência', 'Situação']
 
 const PERCENTUAL = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
 
@@ -20,7 +22,7 @@ export function PromocoesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         titulo="Promoções"
-        descricao="Crie promoções com desconto em todos os produtos de uma categoria, por um período."
+        descricao="Crie promoções com desconto em todos os produtos de uma categoria, por um período. Desative uma promoção para tirá-la do ar e ative de novo quando quiser."
         acoes={
           <Link to="/promocoes/novo" className={BUTTON_CLASSES.primary}>
             <Icone nome="adicionar" />
@@ -64,33 +66,82 @@ function TabelaPromocoes({ promocoes }: { promocoes: Promocao[] }) {
         </thead>
         <tbody className="divide-y divide-zinc-100">
           {promocoes.map((promocao) => (
-            <tr key={promocao.id}>
-              <td className="py-3 pr-4 pl-6">
-                <p className="font-medium text-zinc-900">{promocao.titulo}</p>
-                {promocao.descricao && (
-                  <p className="text-xs text-zinc-500">{promocao.descricao}</p>
-                )}
-              </td>
-              <td className="px-4 py-3 text-zinc-700">{CATEGORIAS[promocao.categoria]}</td>
-              <td className="px-4 py-3 text-zinc-700 tabular-nums">
-                {PERCENTUAL.format(promocao.desconto)}%
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap text-zinc-700 tabular-nums">
-                {formatarData(promocao.dataInicio)} a {formatarData(promocao.dataFim)}
-              </td>
-              <td className="py-3 pr-6 text-right">
-                <Link
-                  to={`/promocoes/${promocao.id}`}
-                  aria-label={`Editar ${promocao.titulo}`}
-                  className="font-medium text-previna-600 hover:text-previna-700"
-                >
-                  Editar
-                </Link>
-              </td>
-            </tr>
+            <LinhaPromocao key={promocao.id} promocao={promocao} />
           ))}
         </tbody>
       </table>
     </section>
+  )
+}
+
+// A situação muda só na linha, sem recarregar a lista
+function LinhaPromocao({ promocao }: { promocao: Promocao }) {
+  const [ativo, setAtivo] = useState(promocao.ativo)
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState(false)
+  const acao = ativo ? 'Desativar' : 'Ativar'
+
+  async function alternar() {
+    setEnviando(true)
+    setErro(false)
+    try {
+      setAtivo(
+        (await put<Promocao>(`/empresas/promocoes/${promocao.id}/ativo`, { ativo: !ativo })).ativo,
+      )
+    } catch {
+      setErro(true)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <tr>
+      <td className="py-3 pr-4 pl-6">
+        <p className="font-medium text-zinc-900">{promocao.titulo}</p>
+        {promocao.descricao && <p className="text-xs text-zinc-500">{promocao.descricao}</p>}
+      </td>
+      <td className="px-4 py-3 text-zinc-700">{CATEGORIAS[promocao.categoria]}</td>
+      <td className="px-4 py-3 text-zinc-700 tabular-nums">
+        {PERCENTUAL.format(promocao.desconto)}%
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap text-zinc-700 tabular-nums">
+        {formatarData(promocao.dataInicio)} a {formatarData(promocao.dataFim)}
+      </td>
+      <td className="px-4 py-3">
+        {ativo ? (
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+            Ativa
+          </span>
+        ) : (
+          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
+            Inativa
+          </span>
+        )}
+      </td>
+      <td className="py-3 pr-6 text-right whitespace-nowrap">
+        <Link
+          to={`/promocoes/${promocao.id}`}
+          aria-label={`Editar ${promocao.titulo}`}
+          className="mr-4 font-medium text-previna-600 hover:text-previna-700"
+        >
+          Editar
+        </Link>
+        <button
+          type="button"
+          onClick={alternar}
+          disabled={enviando}
+          aria-label={`${acao} ${promocao.titulo}`}
+          className="font-medium text-previna-600 hover:text-previna-700 disabled:opacity-60"
+        >
+          {acao}
+        </button>
+        {erro && (
+          <p role="alert" className="text-xs text-red-700">
+            Não foi possível alterar. Tente de novo.
+          </p>
+        )}
+      </td>
+    </tr>
   )
 }

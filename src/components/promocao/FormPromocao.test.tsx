@@ -69,11 +69,12 @@ describe('FormPromocao', () => {
       dataInicio: dataLocal(-2),
       dataFim: dataLocal(7),
       categoria: 'ROUPAS',
+      ativo: false,
     })
 
     expect(screen.getByLabelText('Categoria')).toHaveValue('ROUPAS')
     expect(screen.getByLabelText('Desconto (%)')).toHaveValue('12,5')
-    // Apagada, a descrição não vai e o backend a grava nula
+    // Apagada, a descrição não vai e o backend a grava nula; a situação (ativo) também não vai
     await userEvent.clear(screen.getByLabelText('Descrição'))
     await userEvent.click(screen.getByRole('button', { name: /salvar alterações/i }))
 

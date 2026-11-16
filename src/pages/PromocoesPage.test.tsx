@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -13,6 +14,7 @@ const PROMOCOES = [
     dataInicio: '2030-01-01',
     dataFim: '2030-01-07',
     categoria: 'FRALDAS',
+    ativo: true,
   },
   {
     id: 2,
@@ -21,18 +23,21 @@ const PROMOCOES = [
     dataInicio: '2030-06-01',
     dataFim: '2030-06-30',
     categoria: 'ROUPAS',
+    ativo: false,
   },
 ]
 
-function responder(itens: unknown[]) {
-  return vi
-    .spyOn(globalThis, 'fetch')
-    .mockImplementation(
-      async () =>
-        new Response(
-          JSON.stringify({ itens, pagina: 0, tamanho: 20, total: itens.length, totalPaginas: 1 }),
-        ),
+// GET devolve a lista; PUT devolve a primeira promoção com a situação pedida, ou o status de erro dado
+function responder(itens: unknown[], statusPut = 200) {
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (_, init) => {
+    if (init?.method === 'PUT') {
+      const { ativo } = JSON.parse(String(init.body))
+      return new Response(JSON.stringify({ ...PROMOCOES[0], ativo }), { status: statusPut })
+    }
+    return new Response(
+      JSON.stringify({ itens, pagina: 0, tamanho: 20, total: itens.length, totalPaginas: 1 }),
     )
+  })
 }
 
 function renderizar(state?: unknown) {
@@ -57,10 +62,13 @@ describe('PromocoesPage', () => {
     expect(within(semana).getByText('Fraldas')).toBeInTheDocument()
     expect(within(semana).getByText('12,5%')).toBeInTheDocument()
     expect(within(semana).getByText('01/01/2030 a 07/01/2030')).toBeInTheDocument()
+    expect(within(semana).getByText('Ativa')).toBeInTheDocument()
 
     const inverno = screen.getByText('Inverno').closest('tr')!
     expect(within(inverno).getByText('Roupas')).toBeInTheDocument()
     expect(within(inverno).getByText('20%')).toBeInTheDocument()
+    expect(within(inverno).getByText('Inativa')).toBeInTheDocument()
+    expect(within(inverno).getByRole('button', { name: 'Ativar Inverno' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /cadastrar promoção/i })).toHaveAttribute(
       'href',
       '/promocoes/novo',
@@ -74,5 +82,30 @@ describe('PromocoesPage', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Promoção Inverno cadastrada')
     expect(await screen.findByText('Nenhuma promoção cadastrada ainda.')).toBeInTheDocument()
+  })
+
+  it('desativa e reativa a promoção', async () => {
+    const fetch = responder([PROMOCOES[0]])
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Desativar Semana do bebê' }))
+
+    expect(await screen.findByText('Inativa')).toBeInTheDocument()
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(envio?.[0]).toMatch(/\/empresas\/promocoes\/1\/ativo$/)
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ ativo: false })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ativar Semana do bebê' }))
+    expect(await screen.findByText('Ativa')).toBeInTheDocument()
+  })
+
+  it('mantém a situação e avisa quando não consegue alterar', async () => {
+    responder([PROMOCOES[0]], 500)
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: /desativar/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível alterar')
+    expect(screen.getByText('Ativa')).toBeInTheDocument()
   })
 })
