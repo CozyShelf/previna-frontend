@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormConteudo } from './FormConteudo'
 import type { Conteudo } from './tipos'
 
@@ -207,5 +208,39 @@ describe('FormConteudo', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'O servidor não aceitou os dados ou a imagem. Confira os campos e tente novamente.',
     )
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response(JSON.stringify({ id: 1 }), { status: 201 }))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Título'), 'Alimentação na gestação')
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'DICA')
+    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'TEXTO')
+    await userEvent.type(screen.getByLabelText('Corpo do texto'), 'Coma de tudo um pouco.')
+    cliqueDuplo(screen.getByRole('button', { name: /salvar rascunho/i }))
+
+    expect(
+      await screen.findByText('Conteúdo Alimentação na gestação cadastrado com sucesso.'),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
+  })
+
+  it.each([
+    ['Publicar', RASCUNHO, 'publicado'],
+    ['Despublicar', { ...RASCUNHO, publicado: true }, 'despublicado'],
+    ['Excluir', RASCUNHO, 'excluído'],
+  ])('%s age uma vez só no clique duplo', async (botao, conteudo, feito) => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}'))
+    renderizar(conteudo)
+
+    cliqueDuplo(screen.getByRole('button', { name: botao }))
+
+    expect(
+      await screen.findByText(`Conteúdo Alimentação na gestação ${feito} com sucesso.`),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

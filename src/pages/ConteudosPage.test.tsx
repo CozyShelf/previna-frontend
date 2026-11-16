@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { ConteudosPage } from './ConteudosPage'
 
 const PAGINA = {
@@ -180,5 +181,23 @@ describe('ConteudosPage', () => {
     )
 
     expect(await screen.findByText('Nenhum conteúdo cadastrado ainda.')).toBeInTheDocument()
+  })
+
+  it('exclui uma vez só no clique duplo, com uma confirmação', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <ConteudosPage />
+      </MemoryRouter>,
+    )
+
+    cliqueDuplo(await screen.findByRole('button', { name: 'Excluir Alimentação na gestação' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Conteúdo Alimentação na gestação excluído com sucesso.',
+    )
+    expect(escritas(fetch)).toHaveLength(1)
+    expect(confirmar).toHaveBeenCalledTimes(1)
   })
 })

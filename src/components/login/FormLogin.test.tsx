@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { RotaProtegida } from '@/components/RotaProtegida'
 import { obterToken } from '@/lib/auth'
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { tokenDe } from '@/test/sessao'
 import { FormLogin } from './FormLogin'
 
@@ -128,5 +129,19 @@ describe('FormLogin', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     concluir(new Response(JSON.stringify({ token: tokenDe('ADMIN') })))
     expect(await screen.findByText('Painel')).toBeInTheDocument()
+  })
+
+  it('entra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response(JSON.stringify({ token: tokenDe('MEDICO') })))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText(/^login$/i), 'ana')
+    await userEvent.type(screen.getByLabelText(/^senha$/i), 'senha123')
+    cliqueDuplo(screen.getByRole('button', { name: 'Entrar' }))
+
+    expect(await screen.findByText('Painel')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

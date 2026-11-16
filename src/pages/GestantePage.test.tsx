@@ -1,9 +1,10 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { hoje } from '@/lib/datas'
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { GestantePage } from './GestantePage'
 
 const GESTANTE = {
@@ -241,16 +242,21 @@ describe('GestantePage', () => {
     const fetch = responderComAcoes()
     renderizar()
 
-    const confirmar = await screen.findByRole('button', { name: /confirmar realização/i })
-    // Os dois cliques no mesmo tick, antes de o botão desabilitado chegar ao render
-    act(() => {
-      confirmar.click()
-      confirmar.click()
-    })
+    cliqueDuplo(await screen.findByRole('button', { name: /confirmar realização/i }))
 
     expect(
       await screen.findByText(/presença confirmada e 25 pontos creditados/i),
     ).toBeInTheDocument()
-    expect(fetch.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(1)
+    expect(escritas(fetch)).toHaveLength(1)
+  })
+
+  it('registra o não comparecimento uma vez só no clique duplo', async () => {
+    const fetch = responderComAcoes()
+    renderizar()
+
+    cliqueDuplo(await screen.findByRole('button', { name: /não compareceu/i }))
+
+    expect(await screen.findByText('Não comparecimento registrado.')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

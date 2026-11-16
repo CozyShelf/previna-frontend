@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormCupom, type Cupom } from './FormCupom'
 
 function Lista() {
@@ -194,5 +195,21 @@ describe('FormCupom', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
     expect(screen.getByRole('button', { name: /cadastrar cupom/i })).toBeEnabled()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = responder(PRODUTOS)
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Produto'), '10')
+    await userEvent.type(screen.getByLabelText('Desconto (%)'), '10')
+    await userEvent.type(screen.getByLabelText('Validade'), daquiA30Dias())
+    await userEvent.type(screen.getByLabelText('Pontos para resgatar'), '200')
+    cliqueDuplo(screen.getByRole('button', { name: /cadastrar cupom/i }))
+
+    expect(
+      await screen.findByText('Cupom “10% de desconto em Fralda RN” cadastrado com sucesso.'),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

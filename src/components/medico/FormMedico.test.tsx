@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormMedico, type Medico } from './FormMedico'
 
 function Lista() {
@@ -135,5 +136,26 @@ describe('FormMedico', () => {
     expect(
       await screen.findByText('Já existe um cadastro com este CPF, CRM, e-mail ou login.'),
     ).toBeInTheDocument()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('{}', { status: 201 }))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Nome completo'), 'Ana Souza')
+    await userEvent.type(screen.getByLabelText('CPF'), '52998224725')
+    await userEvent.type(screen.getByLabelText('CRM'), 'CRM-SP 123456')
+    await userEvent.type(screen.getByLabelText('E-mail'), 'ana@clinica.com')
+    await userEvent.type(screen.getByLabelText('Login'), 'ana.souza')
+    await userEvent.type(screen.getByLabelText('Senha'), 'senhaForte1')
+    await userEvent.type(screen.getByLabelText('Confirme a senha'), 'senhaForte1')
+    cliqueDuplo(screen.getByRole('button', { name: /cadastrar médico/i }))
+
+    expect(
+      await screen.findByText('Ana Souza cadastrado. Repasse o login e a senha ao médico.'),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { TipoAtendimentoPage } from './TipoAtendimentoPage'
 import { TiposAtendimentoPage } from './TiposAtendimentoPage'
 
@@ -192,5 +193,23 @@ describe('TiposAtendimentoPage', () => {
     expect(screen.getByText('Carregando tipo…')).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar o tipo.')
     expect(screen.queryByLabelText('Nome')).not.toBeInTheDocument()
+  })
+
+  it('exclui uma vez só no clique duplo, com uma confirmação', async () => {
+    const fetch = mockarApi(() => new Response('{}'))
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <TiposAtendimentoPage />
+      </MemoryRouter>,
+    )
+
+    cliqueDuplo(await screen.findByRole('button', { name: 'Excluir Ultrassom 4D' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Tipo Ultrassom 4D excluído com sucesso.',
+    )
+    expect(escritas(fetch)).toHaveLength(1)
+    expect(confirmar).toHaveBeenCalledTimes(1)
   })
 })

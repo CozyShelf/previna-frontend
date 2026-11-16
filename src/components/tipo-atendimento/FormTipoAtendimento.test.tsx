@@ -1,8 +1,9 @@
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import type { TipoAtendimento } from './categorias'
 import { FormTipoAtendimento } from './FormTipoAtendimento'
 
@@ -111,14 +112,9 @@ describe('FormTipoAtendimento', () => {
     await userEvent.type(screen.getByLabelText('Nome'), 'Ultrassom 4D')
     await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'EXAME')
     await userEvent.type(screen.getByLabelText('Pontuação'), '30')
-    const cadastrar = screen.getByRole('button', { name: 'Cadastrar tipo' })
-    // Os dois cliques no mesmo tick, antes de o botão desabilitado chegar ao render
-    act(() => {
-      cadastrar.click()
-      cadastrar.click()
-    })
+    cliqueDuplo(screen.getByRole('button', { name: 'Cadastrar tipo' }))
 
     expect(await screen.findByText('Tipo Ultrassom 4D cadastrado com sucesso.')).toBeInTheDocument()
-    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })
