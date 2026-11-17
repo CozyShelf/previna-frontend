@@ -236,7 +236,10 @@ function mensagemDeErro(erro: unknown) {
   if (erro instanceof ApiError && erro.status === 404)
     return 'Gestante não encontrada. Volte à lista e abra a gestante de novo.'
   // Mesmo texto do backend: um pendente do mesmo tipo na mesma data, de outro cadastro ou de outra aba
-  if (erro instanceof ApiError && erro.status === 409)
+  if (erro instanceof ApiError && erro.codigo === 'AGENDAMENTO_PENDENTE_REPETIDO')
     return 'Essa gestante já tem esse exame ou consulta pendente nessa data. Mude a data ou o exame.'
+  // Outro conflito: sem o código, não dá para dizer qual
+  if (erro instanceof ApiError && erro.status === 409)
+    return 'Não foi possível salvar: os dados conflitam com outro cadastro. Confira e tente novamente.'
   return 'Não foi possível salvar. Verifique sua conexão e tente novamente.'
 }

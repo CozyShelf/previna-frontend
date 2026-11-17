@@ -169,6 +169,69 @@ describe('FormPromocao', () => {
     expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
   })
 
+  it('com 409 de sobreposição no cadastro, avisa da promoção sobreposta e mantém o formulário', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: 'Promoção sobreposta', codigo: 'PROMOCAO_SOBREPOSTA' }),
+        { status: 409 },
+      ),
+    )
+    renderizar()
+
+    await preencher(dataLocal(0), dataLocal(3))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Já existe uma promoção ativa dessa categoria nesse período. Mude o período, a categoria ou desative a outra promoção.',
+    )
+    expect(screen.getByLabelText('Título')).toHaveValue('Semana do bebê')
+    expect(screen.getByLabelText('Categoria')).toHaveValue('ROUPAS')
+    expect(screen.getByLabelText('Fim')).toHaveValue(dataLocal(3))
+    expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
+  })
+
+  it('com 409 de sobreposição na edição, avisa da promoção sobreposta e mantém o formulário', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: 'Promoção sobreposta', codigo: 'PROMOCAO_SOBREPOSTA' }),
+        { status: 409 },
+      ),
+    )
+    renderizar({
+      id: 3,
+      titulo: 'Semana do bebê',
+      desconto: 12.5,
+      dataInicio: dataLocal(0),
+      dataFim: dataLocal(7),
+      categoria: 'ROUPAS',
+      ativo: true,
+    })
+
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'Fraldas')
+    await userEvent.click(screen.getByRole('button', { name: /salvar alterações/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Já existe uma promoção ativa dessa categoria nesse período.',
+    )
+    expect(screen.getByLabelText('Categoria')).toHaveValue('FRALDAS')
+    expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeEnabled()
+  })
+
+  it('com 409 sem o código de sobreposição, mostra o conflito genérico', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Dados já cadastrados' }), { status: 409 }),
+    )
+    renderizar()
+
+    await preencher(dataLocal(0), dataLocal(3))
+
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent(
+      'Não foi possível salvar: os dados conflitam com outro cadastro. Confira e tente novamente.',
+    )
+    expect(alerta).not.toHaveTextContent('promoção ativa')
+    expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
+  })
+
   it('cadastra uma vez só no clique duplo', async () => {
     const fetch = vi
       .spyOn(globalThis, 'fetch')

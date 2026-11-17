@@ -72,4 +72,36 @@ describe('api', () => {
     expect((erro as ApiError).status).toBe(401)
     expect(assign).not.toHaveBeenCalled()
   })
+
+  it('guarda o código do corpo de erro', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: 'Promoção sobreposta', codigo: 'PROMOCAO_SOBREPOSTA' }),
+        { status: 409 },
+      ),
+    )
+
+    const erro = await post('/empresas/promocoes', {}).catch((e: unknown) => e)
+
+    expect(erro).toBeInstanceOf(ApiError)
+    expect((erro as ApiError).status).toBe(409)
+    expect((erro as ApiError).codigo).toBe('PROMOCAO_SOBREPOSTA')
+  })
+
+  it.each([
+    ['vazio', ''],
+    ['que não é JSON', '<html>Erro</html>'],
+    ['JSON nulo', 'null'],
+    ['sem o campo', JSON.stringify({ message: 'Dados já cadastrados' })],
+    ['com código desconhecido', JSON.stringify({ codigo: 'OUTRO' })],
+    ['com código que não é texto', JSON.stringify({ codigo: 7 })],
+  ])('com corpo de erro %s, o código fica indefinido', async (_, corpo) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(corpo, { status: 409 }))
+
+    const erro = await get('/a').catch((e: unknown) => e)
+
+    expect(erro).toBeInstanceOf(ApiError)
+    expect((erro as ApiError).status).toBe(409)
+    expect((erro as ApiError).codigo).toBeUndefined()
+  })
 })

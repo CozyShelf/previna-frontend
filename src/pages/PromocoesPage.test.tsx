@@ -29,9 +29,12 @@ const PROMOCOES = [
 ]
 
 // GET devolve a lista; PUT devolve a primeira promoção com a situação pedida, ou o status de erro dado
-function responder(itens: unknown[], statusPut = 200) {
+// Com status de erro, o PUT devolve o corpo de erro da API, com o código quando houver
+function responder(itens: unknown[], statusPut = 200, codigo?: string) {
   return vi.spyOn(globalThis, 'fetch').mockImplementation(async (_, init) => {
     if (init?.method === 'PUT') {
+      if (statusPut >= 400)
+        return new Response(JSON.stringify({ message: 'Erro', codigo }), { status: statusPut })
       const { ativo } = JSON.parse(String(init.body))
       return new Response(JSON.stringify({ ...PROMOCOES[0], ativo }), { status: statusPut })
     }
@@ -108,6 +111,34 @@ describe('PromocoesPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível alterar')
     expect(screen.getByText('Ativa')).toBeInTheDocument()
+  })
+
+  it('com 409 de sobreposição ao ativar, explica e a linha continua inativa', async () => {
+    const fetch = responder([PROMOCOES[1]], 409, 'PROMOCAO_SOBREPOSTA')
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ativar Inverno' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não é possível ativar: já existe outra promoção ativa dessa categoria nesse período.',
+    )
+    expect(screen.getByText('Inativa')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ativar Inverno' })).toBeEnabled()
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(envio?.[0]).toMatch(/\/empresas\/promocoes\/2\/ativo$/)
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ ativo: true })
+  })
+
+  it('com 409 sem o código de sobreposição ao ativar, mostra o aviso genérico', async () => {
+    responder([PROMOCOES[1]], 409)
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ativar Inverno' }))
+
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent('Não foi possível alterar. Tente de novo.')
+    expect(alerta).not.toHaveTextContent('promoção ativa')
+    expect(screen.getByText('Inativa')).toBeInTheDocument()
   })
 
   it('desativa uma vez só no clique duplo', async () => {

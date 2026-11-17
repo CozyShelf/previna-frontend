@@ -7,7 +7,7 @@ import type { Promocao } from '@/components/promocao/FormPromocao'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { useEnvioUnico } from '@/hooks/useEnvioUnico'
-import { put } from '@/lib/api'
+import { ApiError, put } from '@/lib/api'
 import { formatarData } from '@/lib/datas'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 
@@ -79,19 +79,19 @@ function TabelaPromocoes({ promocoes }: { promocoes: Promocao[] }) {
 function LinhaPromocao({ promocao }: { promocao: Promocao }) {
   const [ativo, setAtivo] = useState(promocao.ativo)
   const { enviando, enviar } = useEnvioUnico()
-  const [erro, setErro] = useState(false)
+  const [erro, setErro] = useState<string>()
   const acao = ativo ? 'Desativar' : 'Ativar'
 
   async function alternar() {
     await enviar(async () => {
-      setErro(false)
+      setErro(undefined)
       try {
         setAtivo(
           (await put<Promocao>(`/empresas/promocoes/${promocao.id}/ativo`, { ativo: !ativo }))
             .ativo,
         )
-      } catch {
-        setErro(true)
+      } catch (e) {
+        setErro(mensagemDeErro(e, !ativo))
       }
     })
   }
@@ -139,10 +139,17 @@ function LinhaPromocao({ promocao }: { promocao: Promocao }) {
         </button>
         {erro && (
           <p role="alert" className="text-xs text-red-700">
-            Não foi possível alterar. Tente de novo.
+            {erro}
           </p>
         )}
       </td>
     </tr>
   )
+}
+
+// Ao ativar, o backend avisa pelo código quando já há outra promoção ativa da mesma categoria com período sobreposto
+function mensagemDeErro(erro: unknown, ativando: boolean) {
+  if (ativando && erro instanceof ApiError && erro.codigo === 'PROMOCAO_SOBREPOSTA')
+    return 'Não é possível ativar: já existe outra promoção ativa dessa categoria nesse período.'
+  return 'Não foi possível alterar. Tente de novo.'
 }

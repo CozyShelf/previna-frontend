@@ -216,13 +216,30 @@ describe('FormAgendamento', () => {
     )
   })
 
+  it('com 409 sem o código de pendente repetido, mostra o conflito genérico', async () => {
+    responder(409)
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Exame ou consulta'), '3')
+    await userEvent.type(screen.getByLabelText('Data prevista'), amanha())
+    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar' }))
+
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent(
+      'Não foi possível salvar: os dados conflitam com outro cadastro. Confira e tente novamente.',
+    )
+    expect(alerta).not.toHaveTextContent('pendente')
+    expect(screen.getByRole('button', { name: 'Cadastrar' })).toBeEnabled()
+  })
+
   // Regra do backend: a gestante não pode ter dois pendentes do mesmo tipo na mesma data
   it('mostra o conflito de pendente no 409 e mantém o que foi preenchido', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) =>
       init?.method === 'POST'
         ? new Response(
             JSON.stringify({
-              mensagem: 'Essa gestante já tem esse exame ou consulta pendente nessa data',
+              message: 'Essa gestante já tem esse exame ou consulta pendente nessa data',
+              codigo: 'AGENDAMENTO_PENDENTE_REPETIDO',
             }),
             { status: 409 },
           )
