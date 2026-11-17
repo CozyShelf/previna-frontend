@@ -49,6 +49,22 @@ function validar(item: Item): ErrosItem {
   }
 }
 
+// Conforto de UX: o banco recusa dois pendentes do mesmo tipo na mesma data, então a lista já
+// avisa antes de enviar. A primeira ocorrência fica valendo; as repetidas recebem o erro na data.
+function marcarRepetidos(itens: Item[], erros: ErrosItem[]): ErrosItem[] {
+  const vistos = new Set<string>()
+  return itens.map((item, indice) => {
+    const erro = erros[indice] ?? {}
+    if (!item.tipoAtendimento || !item.dataPrevista || erro.dataPrevista) return erro
+    const chave = `${item.tipoAtendimento}|${item.dataPrevista}`
+    if (!vistos.has(chave)) {
+      vistos.add(chave)
+      return erro
+    }
+    return { ...erro, dataPrevista: 'Esse exame ou consulta já está na lista nessa data.' }
+  })
+}
+
 export function FormAgendamento() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -82,7 +98,7 @@ export function FormAgendamento() {
   }
 
   async function salvar() {
-    const encontrados = itens.map(validar)
+    const encontrados = marcarRepetidos(itens, itens.map(validar))
     if (encontrados.some((item) => item.tipoAtendimento || item.dataPrevista)) {
       setErros(encontrados)
       return
@@ -219,5 +235,8 @@ function mensagemDeErro(erro: unknown) {
     return 'O servidor não aceitou os dados. Confira os campos e tente novamente.'
   if (erro instanceof ApiError && erro.status === 404)
     return 'Gestante não encontrada. Volte à lista e abra a gestante de novo.'
+  // Mesmo texto do backend: um pendente do mesmo tipo na mesma data, de outro cadastro ou de outra aba
+  if (erro instanceof ApiError && erro.status === 409)
+    return 'Essa gestante já tem esse exame ou consulta pendente nessa data. Mude a data ou o exame.'
   return 'Não foi possível salvar. Verifique sua conexão e tente novamente.'
 }
