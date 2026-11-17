@@ -171,5 +171,8 @@ export function FormPromocao({ promocao }: FormPromocaoProps) {
 function mensagemDeErro(erro: unknown) {
   if (erro instanceof ApiError && erro.status === 400)
     return 'O servidor não aceitou os dados. Confira o período e a categoria e tente novamente.'
+  // Regra do backend: uma promoção ativa por categoria em cada período, contando os dois dias
+  if (erro instanceof ApiError && erro.status === 409)
+    return 'Já existe uma promoção ativa dessa categoria nesse período. Mude o período, a categoria ou desative a outra promoção.'
   return 'Não foi possível salvar. Verifique sua conexão e tente novamente.'
 }
