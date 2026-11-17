@@ -147,9 +147,9 @@ function LinhaPromocao({ promocao }: { promocao: Promocao }) {
   )
 }
 
-// Só ativar dá 409: já há outra promoção ativa da mesma categoria com período sobreposto
+// Ao ativar, o backend avisa pelo código quando já há outra promoção ativa da mesma categoria com período sobreposto
 function mensagemDeErro(erro: unknown, ativando: boolean) {
-  if (ativando && erro instanceof ApiError && erro.status === 409)
+  if (ativando && erro instanceof ApiError && erro.codigo === 'PROMOCAO_SOBREPOSTA')
     return 'Não é possível ativar: já existe outra promoção ativa dessa categoria nesse período.'
   return 'Não foi possível alterar. Tente de novo.'
 }

@@ -172,7 +172,10 @@ function mensagemDeErro(erro: unknown) {
   if (erro instanceof ApiError && erro.status === 400)
     return 'O servidor não aceitou os dados. Confira o período e a categoria e tente novamente.'
   // Regra do backend: uma promoção ativa por categoria em cada período, contando os dois dias
-  if (erro instanceof ApiError && erro.status === 409)
+  if (erro instanceof ApiError && erro.codigo === 'PROMOCAO_SOBREPOSTA')
     return 'Já existe uma promoção ativa dessa categoria nesse período. Mude o período, a categoria ou desative a outra promoção.'
+  // Outro conflito (como dados já cadastrados): sem o código, não dá para dizer qual
+  if (erro instanceof ApiError && erro.status === 409)
+    return 'Não foi possível salvar: os dados conflitam com outro cadastro. Confira e tente novamente.'
   return 'Não foi possível salvar. Verifique sua conexão e tente novamente.'
 }

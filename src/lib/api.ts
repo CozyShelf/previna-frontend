@@ -14,9 +14,35 @@ export interface Pagina<T> {
   totalPaginas: number
 }
 
+// Códigos que o backend manda no corpo de erro ({ message, codigo }) para distinguir conflitos do mesmo status
+export const CODIGOS_DE_ERRO = [
+  'PROMOCAO_JA_RESGATADA',
+  'PROMOCAO_INDISPONIVEL',
+  'PROMOCAO_SOBREPOSTA',
+  'CUPOM_INDISPONIVEL',
+  'PONTOS_INSUFICIENTES',
+  'AGENDAMENTO_PENDENTE_REPETIDO',
+] as const
+
+export type CodigoDeErro = (typeof CODIGOS_DE_ERRO)[number]
+
 export class ApiError extends Error {
-  constructor(public status: number) {
+  constructor(
+    public status: number,
+    public codigo?: CodigoDeErro,
+  ) {
     super(`Erro ${status} na requisição`)
+  }
+}
+
+// Tolerante: corpo vazio, que não é JSON, sem o campo ou com um código desconhecido dá undefined
+async function lerCodigo(resposta: Response): Promise<CodigoDeErro | undefined> {
+  try {
+    const corpo: unknown = JSON.parse(await resposta.text())
+    const codigo = (corpo as { codigo?: unknown } | null)?.codigo
+    return CODIGOS_DE_ERRO.find((c) => c === codigo)
+  } catch {
+    return undefined
   }
 }
 
@@ -37,7 +63,7 @@ async function requisicao<T>(caminho: string, init: RequestInit = {}): Promise<T
     window.location.assign('/login')
   }
   if (!resposta.ok) {
-    throw new ApiError(resposta.status)
+    throw new ApiError(resposta.status, await lerCodigo(resposta))
   }
   return resposta.json()
 }

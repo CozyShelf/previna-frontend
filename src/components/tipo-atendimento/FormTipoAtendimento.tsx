@@ -122,7 +122,7 @@ export function FormTipoAtendimento({ tipo }: FormTipoAtendimentoProps) {
   )
 }
 
-// O ApiError só carrega o status
+// Esse conflito não tem código no corpo de erro: decide pelo status
 function mensagemDeErro(erro: unknown) {
   if (erro instanceof ApiError && erro.status === 409) return 'Já existe um tipo seu com esse nome.'
   if (erro instanceof ApiError && erro.status === 400)
