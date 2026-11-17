@@ -169,6 +169,43 @@ describe('FormPromocao', () => {
     expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
   })
 
+  it('com 409 no cadastro, avisa da promoção sobreposta e mantém o formulário', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }))
+    renderizar()
+
+    await preencher(dataLocal(0), dataLocal(3))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Já existe uma promoção ativa dessa categoria nesse período. Mude o período, a categoria ou desative a outra promoção.',
+    )
+    expect(screen.getByLabelText('Título')).toHaveValue('Semana do bebê')
+    expect(screen.getByLabelText('Categoria')).toHaveValue('ROUPAS')
+    expect(screen.getByLabelText('Fim')).toHaveValue(dataLocal(3))
+    expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
+  })
+
+  it('com 409 na edição, avisa da promoção sobreposta e mantém o formulário', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }))
+    renderizar({
+      id: 3,
+      titulo: 'Semana do bebê',
+      desconto: 12.5,
+      dataInicio: dataLocal(0),
+      dataFim: dataLocal(7),
+      categoria: 'ROUPAS',
+      ativo: true,
+    })
+
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'Fraldas')
+    await userEvent.click(screen.getByRole('button', { name: /salvar alterações/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Já existe uma promoção ativa dessa categoria nesse período.',
+    )
+    expect(screen.getByLabelText('Categoria')).toHaveValue('FRALDAS')
+    expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeEnabled()
+  })
+
   it('cadastra uma vez só no clique duplo', async () => {
     const fetch = vi
       .spyOn(globalThis, 'fetch')

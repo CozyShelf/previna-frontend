@@ -110,6 +110,22 @@ describe('PromocoesPage', () => {
     expect(screen.getByText('Ativa')).toBeInTheDocument()
   })
 
+  it('com 409 ao ativar, explica a promoção sobreposta e a linha continua inativa', async () => {
+    const fetch = responder([PROMOCOES[1]], 409)
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ativar Inverno' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não é possível ativar: já existe outra promoção ativa dessa categoria nesse período.',
+    )
+    expect(screen.getByText('Inativa')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ativar Inverno' })).toBeEnabled()
+    const envio = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(envio?.[0]).toMatch(/\/empresas\/promocoes\/2\/ativo$/)
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ ativo: true })
+  })
+
   it('desativa uma vez só no clique duplo', async () => {
     const fetch = responder([PROMOCOES[0]])
     renderizar()
