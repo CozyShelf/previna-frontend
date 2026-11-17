@@ -169,8 +169,13 @@ describe('FormPromocao', () => {
     expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
   })
 
-  it('com 409 no cadastro, avisa da promoção sobreposta e mantém o formulário', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }))
+  it('com 409 de sobreposição no cadastro, avisa da promoção sobreposta e mantém o formulário', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: 'Promoção sobreposta', codigo: 'PROMOCAO_SOBREPOSTA' }),
+        { status: 409 },
+      ),
+    )
     renderizar()
 
     await preencher(dataLocal(0), dataLocal(3))
@@ -184,8 +189,13 @@ describe('FormPromocao', () => {
     expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
   })
 
-  it('com 409 na edição, avisa da promoção sobreposta e mantém o formulário', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }))
+  it('com 409 de sobreposição na edição, avisa da promoção sobreposta e mantém o formulário', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: 'Promoção sobreposta', codigo: 'PROMOCAO_SOBREPOSTA' }),
+        { status: 409 },
+      ),
+    )
     renderizar({
       id: 3,
       titulo: 'Semana do bebê',
@@ -204,6 +214,22 @@ describe('FormPromocao', () => {
     )
     expect(screen.getByLabelText('Categoria')).toHaveValue('FRALDAS')
     expect(screen.getByRole('button', { name: /salvar alterações/i })).toBeEnabled()
+  })
+
+  it('com 409 sem o código de sobreposição, mostra o conflito genérico', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Dados já cadastrados' }), { status: 409 }),
+    )
+    renderizar()
+
+    await preencher(dataLocal(0), dataLocal(3))
+
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent(
+      'Não foi possível salvar: os dados conflitam com outro cadastro. Confira e tente novamente.',
+    )
+    expect(alerta).not.toHaveTextContent('promoção ativa')
+    expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
   })
 
   it('cadastra uma vez só no clique duplo', async () => {
