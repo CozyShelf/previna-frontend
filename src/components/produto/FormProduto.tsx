@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post, put, urlDaApi } from '@/lib/api'
 import { decimalDaApi } from '@/lib/mascaras'
@@ -44,36 +45,36 @@ export interface FormProdutoProps {
 export function FormProduto({ produto }: FormProdutoProps) {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function salvar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      // Vai como multipart por causa da imagem
-      dados.set('preco', decimalDaApi(dados.get('preco')))
-      // Opcional em branco não vai, para ficar nulo no banco em vez de texto vazio
-      for (const nome of ['categoria', 'preco', 'descricao']) {
-        if (!String(dados.get(nome)).trim()) dados.delete(nome)
-      }
-      const imagem = dados.get('imagem')
-      if (!(imagem instanceof File) || !imagem.size) dados.delete('imagem')
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        // Vai como multipart por causa da imagem
+        dados.set('preco', decimalDaApi(dados.get('preco')))
+        // Opcional em branco não vai, para ficar nulo no banco em vez de texto vazio
+        for (const nome of ['categoria', 'preco', 'descricao']) {
+          if (!String(dados.get(nome)).trim()) dados.delete(nome)
+        }
+        const imagem = dados.get('imagem')
+        if (!(imagem instanceof File) || !imagem.size) dados.delete('imagem')
 
-      // Na edição a imagem só é enviada quando trocada; sem ela, o backend mantém a atual
-      if (produto) await put(`/empresas/produtos/${produto.id}`, dados)
-      else await post('/empresas/produtos', dados)
-      navigate('/produtos', {
-        state: {
-          mensagem: `Produto ${dados.get('nome')} ${produto ? 'atualizado' : 'cadastrado'} com sucesso.`,
-        },
-      })
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setEnviando(false)
-    }
+        // Na edição a imagem só é enviada quando trocada; sem ela, o backend mantém a atual
+        if (produto) await put(`/empresas/produtos/${produto.id}`, dados)
+        else await post('/empresas/produtos', dados)
+        navigate('/produtos', {
+          state: {
+            mensagem: `Produto ${dados.get('nome')} ${produto ? 'atualizado' : 'cadastrado'} com sucesso.`,
+          },
+        })
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   return (

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormPreCadastroEmpresa } from './FormPreCadastroEmpresa'
 
 function renderizar(onCadastrado = vi.fn()) {
@@ -87,5 +88,23 @@ describe('FormPreCadastroEmpresa', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
     expect(onCadastrado).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: /cadastrar empresa/i })).toBeEnabled()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('{}', { status: 201 }))
+    const onCadastrado = vi.fn()
+    renderizar(onCadastrado)
+
+    await userEvent.type(screen.getByLabelText('Razão social'), 'Farmácia Bem Nascer')
+    await userEvent.type(screen.getByLabelText('CNPJ'), '11222333000181')
+    await userEvent.type(screen.getByLabelText('Responsável'), 'Ana Souza')
+    await userEvent.type(screen.getByLabelText('E-mail'), 'contato@bemnascer.com')
+    await userEvent.type(screen.getByLabelText('Telefone'), '1133334444')
+    cliqueDuplo(screen.getByRole('button', { name: /cadastrar empresa/i }))
+
+    await vi.waitFor(() => expect(onCadastrado).toHaveBeenCalled())
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

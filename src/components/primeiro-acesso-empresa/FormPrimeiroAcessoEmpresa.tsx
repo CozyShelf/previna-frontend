@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, put } from '@/lib/api'
 import { salvarToken } from '@/lib/auth'
@@ -31,30 +32,29 @@ const VALIDACOES: Validacoes<Campo> = {
 export function FormPrimeiroAcessoEmpresa() {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function salvar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      // Vai como multipart por causa do logo; só os campos que o backend espera
-      dados.delete('confirmacao')
-      if (!dados.get('descricao')) dados.delete('descricao')
-      const logo = dados.get('logo')
-      if (!(logo instanceof File) || !logo.size) dados.delete('logo')
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        // Vai como multipart por causa do logo; só os campos que o backend espera
+        dados.delete('confirmacao')
+        if (!dados.get('descricao')) dados.delete('descricao')
+        const logo = dados.get('logo')
+        if (!(logo instanceof File) || !logo.size) dados.delete('logo')
 
-      // O token da senha temporária só servia para esta etapa; segue com o novo
-      const { token } = await put<{ token: string }>('/empresas/primeiro-acesso', dados)
-      salvarToken(token)
-      navigate('/tutorial', { replace: true })
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-    } finally {
-      setEnviando(false)
-    }
+        // O token da senha temporária só servia para esta etapa; segue com o novo
+        const { token } = await put<{ token: string }>('/empresas/primeiro-acesso', dados)
+        salvarToken(token)
+        navigate('/tutorial', { replace: true })
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   return (

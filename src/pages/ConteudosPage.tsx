@@ -12,6 +12,7 @@ import {
 } from '@/components/conteudo/tipos'
 import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { del } from '@/lib/api'
 import BUTTON_CLASSES, { ACAO_LISTAGEM } from '@/types/ButtonClasses'
 
@@ -46,27 +47,30 @@ export function ConteudosPage() {
   )
   const [erro, setErro] = useState<string>()
   const [excluindo, setExcluindo] = useState<number>()
+  const { enviar } = useEnvioUnico()
 
   async function excluir(conteudo: Conteudo, recarregar: () => void) {
-    if (
-      !window.confirm(
-        `Excluir o conteúdo ${conteudo.titulo}? Ele sai do aplicativo das gestantes e não dá para desfazer.`,
+    await enviar(async () => {
+      if (
+        !window.confirm(
+          `Excluir o conteúdo ${conteudo.titulo}? Ele sai do aplicativo das gestantes e não dá para desfazer.`,
+        )
       )
-    )
-      return
+        return
 
-    setMensagem(undefined)
-    setErro(undefined)
-    setExcluindo(conteudo.id)
-    try {
-      await del(`/conteudos/${conteudo.id}`)
-      setMensagem(`Conteúdo ${conteudo.titulo} excluído com sucesso.`)
-      recarregar()
-    } catch {
-      setErro(`Não foi possível excluir o conteúdo ${conteudo.titulo}. Tente novamente.`)
-    } finally {
-      setExcluindo(undefined)
-    }
+      setMensagem(undefined)
+      setErro(undefined)
+      setExcluindo(conteudo.id)
+      try {
+        await del(`/conteudos/${conteudo.id}`)
+        setMensagem(`Conteúdo ${conteudo.titulo} excluído com sucesso.`)
+        recarregar()
+      } catch {
+        setErro(`Não foi possível excluir o conteúdo ${conteudo.titulo}. Tente novamente.`)
+      } finally {
+        setExcluindo(undefined)
+      }
+    })
   }
 
   return (

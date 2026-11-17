@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormAgendamento } from './FormAgendamento'
 
 function Detalhe() {
@@ -213,5 +214,19 @@ describe('FormAgendamento', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'O servidor não aceitou os dados. Confira os campos e tente novamente.',
     )
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = responder()
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Exame ou consulta'), '3')
+    await userEvent.type(screen.getByLabelText('Data prevista'), amanha())
+    cliqueDuplo(screen.getByRole('button', { name: 'Cadastrar' }))
+
+    expect(
+      await screen.findByText('Cadastro de Hemograma completo realizado com sucesso.'),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

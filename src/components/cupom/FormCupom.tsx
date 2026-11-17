@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type PropsCampo, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, get, post, put, type Pagina } from '@/lib/api'
 import { hoje } from '@/lib/datas'
@@ -57,7 +58,7 @@ export function FormCupom({ cupom }: FormCupomProps) {
   const [produtos, setProdutos] = useState<Produto[]>()
   const [erroCarga, setErroCarga] = useState(false)
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   useEffect(() => {
@@ -70,28 +71,28 @@ export function FormCupom({ cupom }: FormCupomProps) {
   async function salvar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const corpo = {
-        produto: Number(dados.get('produto')),
-        desconto: Number(decimalDaApi(dados.get('desconto'))),
-        dataValidade: dados.get('dataValidade'),
-        pontosNecessarios: Number(dados.get('pontosNecessarios')),
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const corpo = {
+          produto: Number(dados.get('produto')),
+          desconto: Number(decimalDaApi(dados.get('desconto'))),
+          dataValidade: dados.get('dataValidade'),
+          pontosNecessarios: Number(dados.get('pontosNecessarios')),
+        }
+        // A situação (ativo) não vai: na edição continua a mesma
+        const salvo = cupom
+          ? await put<Cupom>(`/empresas/cupons/${cupom.id}`, corpo)
+          : await post<Cupom>('/empresas/cupons', corpo)
+        navigate('/cupons', {
+          state: {
+            mensagem: `Cupom “${salvo.descricao}” ${cupom ? 'atualizado' : 'cadastrado'} com sucesso.`,
+          },
+        })
+      } catch (e) {
+        setErro(mensagemDeErro(e))
       }
-      // A situação (ativo) não vai: na edição continua a mesma
-      const salvo = cupom
-        ? await put<Cupom>(`/empresas/cupons/${cupom.id}`, corpo)
-        : await post<Cupom>('/empresas/cupons', corpo)
-      navigate('/cupons', {
-        state: {
-          mensagem: `Cupom “${salvo.descricao}” ${cupom ? 'atualizado' : 'cadastrado'} com sucesso.`,
-        },
-      })
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setEnviando(false)
-    }
+    })
   }
 
   if (erroCarga) {

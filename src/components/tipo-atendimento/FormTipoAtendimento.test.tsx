@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import type { TipoAtendimento } from './categorias'
 import { FormTipoAtendimento } from './FormTipoAtendimento'
 
@@ -102,5 +103,18 @@ describe('FormTipoAtendimento', () => {
     expect(screen.getByLabelText('Nome')).toHaveValue('Ultrassom 4D')
     expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeEnabled()
     expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = responder(201)
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Nome'), 'Ultrassom 4D')
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'EXAME')
+    await userEvent.type(screen.getByLabelText('Pontuação'), '30')
+    cliqueDuplo(screen.getByRole('button', { name: 'Cadastrar tipo' }))
+
+    expect(await screen.findByText('Tipo Ultrassom 4D cadastrado com sucesso.')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

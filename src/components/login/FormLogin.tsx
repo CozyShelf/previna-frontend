@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { ApiError, post } from '@/lib/api'
 import { perfilDoToken, salvarToken } from '@/lib/auth'
 import { Alerta } from '../common/Alerta'
@@ -18,32 +19,31 @@ const PERFIS_WEB = ['MEDICO', 'ADMIN', 'EMPRESA_PARCEIRA']
 export function FormLogin() {
   const navigate = useNavigate()
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
 
   async function entrar(dados: FormData) {
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const { token } = await post<TokenResponse>('/auth/login', {
-        login: dados.get('login'),
-        senha: dados.get('senha'),
-      })
-      if (!PERFIS_WEB.includes(perfilDoToken(token))) {
-        setErro('Gestantes acessam o Previna pelo aplicativo no celular.')
-        return
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const { token } = await post<TokenResponse>('/auth/login', {
+          login: dados.get('login'),
+          senha: dados.get('senha'),
+        })
+        if (!PERFIS_WEB.includes(perfilDoToken(token))) {
+          setErro('Gestantes acessam o Previna pelo aplicativo no celular.')
+          return
+        }
+        salvarToken(token)
+        // Com a senha temporária, a RotaProtegida leva ao primeiro acesso
+        navigate('/', { replace: true })
+      } catch (e) {
+        setErro(
+          e instanceof ApiError && e.status === 401
+            ? 'Login ou senha inválidos.'
+            : 'Não foi possível entrar. Verifique sua conexão e tente novamente.',
+        )
       }
-      salvarToken(token)
-      // Com a senha temporária, a RotaProtegida leva ao primeiro acesso
-      navigate('/', { replace: true })
-    } catch (e) {
-      setErro(
-        e instanceof ApiError && e.status === 401
-          ? 'Login ou senha inválidos.'
-          : 'Não foi possível entrar. Verifique sua conexão e tente novamente.',
-      )
-    } finally {
-      setEnviando(false)
-    }
+    })
   }
 
   return (

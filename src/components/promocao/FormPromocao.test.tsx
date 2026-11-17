@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormPromocao, type Promocao } from './FormPromocao'
 
 function Lista() {
@@ -166,5 +167,24 @@ describe('FormPromocao', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
     expect(screen.getByRole('button', { name: /cadastrar promoção/i })).toBeEnabled()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('{}', { status: 201 }))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Título'), 'Semana do bebê')
+    await userEvent.type(screen.getByLabelText('Desconto (%)'), '12,5')
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), 'Fraldas')
+    await userEvent.type(screen.getByLabelText('Início'), dataLocal(0))
+    await userEvent.type(screen.getByLabelText('Fim'), dataLocal(7))
+    cliqueDuplo(screen.getByRole('button', { name: /cadastrar promoção/i }))
+
+    expect(
+      await screen.findByText('Promoção Semana do bebê cadastrada com sucesso.'),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

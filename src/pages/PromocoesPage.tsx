@@ -6,6 +6,7 @@ import { CATEGORIAS } from '@/components/produto/categorias'
 import type { Promocao } from '@/components/promocao/FormPromocao'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { put } from '@/lib/api'
 import { formatarData } from '@/lib/datas'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
@@ -77,22 +78,22 @@ function TabelaPromocoes({ promocoes }: { promocoes: Promocao[] }) {
 // A situação muda só na linha, sem recarregar a lista
 function LinhaPromocao({ promocao }: { promocao: Promocao }) {
   const [ativo, setAtivo] = useState(promocao.ativo)
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const [erro, setErro] = useState(false)
   const acao = ativo ? 'Desativar' : 'Ativar'
 
   async function alternar() {
-    setEnviando(true)
-    setErro(false)
-    try {
-      setAtivo(
-        (await put<Promocao>(`/empresas/promocoes/${promocao.id}/ativo`, { ativo: !ativo })).ativo,
-      )
-    } catch {
-      setErro(true)
-    } finally {
-      setEnviando(false)
-    }
+    await enviar(async () => {
+      setErro(false)
+      try {
+        setAtivo(
+          (await put<Promocao>(`/empresas/promocoes/${promocao.id}/ativo`, { ativo: !ativo }))
+            .ativo,
+        )
+      } catch {
+        setErro(true)
+      }
+    })
   }
 
   return (

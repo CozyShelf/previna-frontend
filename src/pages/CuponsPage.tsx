@@ -5,6 +5,7 @@ import { Icone } from '@/components/common/Icone'
 import type { Cupom } from '@/components/cupom/FormCupom'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { put } from '@/lib/api'
 import { formatarData } from '@/lib/datas'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
@@ -73,20 +74,19 @@ function TabelaCupons({ cupons }: { cupons: Cupom[] }) {
 // A situação muda só na linha, sem recarregar a lista
 function LinhaCupom({ cupom }: { cupom: Cupom }) {
   const [ativo, setAtivo] = useState(cupom.ativo)
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const [erro, setErro] = useState(false)
   const acao = ativo ? 'Desativar' : 'Ativar'
 
   async function alternar() {
-    setEnviando(true)
-    setErro(false)
-    try {
-      setAtivo((await put<Cupom>(`/empresas/cupons/${cupom.id}/ativo`, { ativo: !ativo })).ativo)
-    } catch {
-      setErro(true)
-    } finally {
-      setEnviando(false)
-    }
+    await enviar(async () => {
+      setErro(false)
+      try {
+        setAtivo((await put<Cupom>(`/empresas/cupons/${cupom.id}/ativo`, { ativo: !ativo })).ativo)
+      } catch {
+        setErro(true)
+      }
+    })
   }
 
   return (

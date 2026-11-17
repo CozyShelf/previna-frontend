@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormPrimeiroAcessoEmpresa } from './FormPrimeiroAcessoEmpresa'
 
 function renderizar() {
@@ -19,13 +20,17 @@ function renderizar() {
 // Sem filtrar pelo accept do input, para testar a validação do tipo
 const usuario = userEvent.setup({ applyAccept: false })
 
-async function preencher(confirmacao: string, logo?: File) {
+async function preencherCampos(confirmacao: string, logo?: File) {
   await usuario.type(screen.getByLabelText('Novo login'), 'bemnascer')
   await usuario.type(screen.getByLabelText('Nova senha'), 'senhaNova1')
   await usuario.type(screen.getByLabelText('Confirme a nova senha'), confirmacao)
   await usuario.type(screen.getByLabelText('Segmento'), 'Farmácia')
   await usuario.type(screen.getByLabelText('Endereço'), 'Rua das Flores, 100')
   if (logo) await usuario.upload(screen.getByLabelText('Logo'), logo)
+}
+
+async function preencher(confirmacao: string, logo?: File) {
+  await preencherCampos(confirmacao, logo)
   await usuario.click(screen.getByRole('button', { name: /salvar e continuar/i }))
 }
 
@@ -153,5 +158,20 @@ describe('FormPrimeiroAcessoEmpresa', () => {
     expect(localStorage.getItem('previna.token')).toBeNull()
     expect(screen.queryByText('Tutorial')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /salvar e continuar/i })).toBeEnabled()
+  })
+
+  it('salva uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(
+        async () => new Response(JSON.stringify({ token: 'novo-token', primeiroAcesso: false })),
+      )
+    renderizar()
+
+    await preencherCampos('senhaNova1')
+    cliqueDuplo(screen.getByRole('button', { name: /salvar e continuar/i }))
+
+    expect(await screen.findByText('Tutorial')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

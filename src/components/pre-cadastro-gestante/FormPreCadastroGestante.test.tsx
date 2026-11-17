@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormPreCadastroGestante } from './FormPreCadastroGestante'
 
 function renderizar(onCadastrado = vi.fn()) {
@@ -37,7 +38,7 @@ const VALIDOS: Dados = {
   dum: dataLocal(-70),
 }
 
-async function preencherEEnviar(alterados: Partial<Dados> = {}) {
+async function preencher(alterados: Partial<Dados> = {}) {
   const dados = { ...VALIDOS, ...alterados }
   const rotulos: Record<keyof Dados, string> = {
     nome: 'Nome completo',
@@ -51,6 +52,10 @@ async function preencherEEnviar(alterados: Partial<Dados> = {}) {
     const valor = dados[campo as keyof Dados]
     if (valor) await userEvent.type(screen.getByLabelText(rotulo), valor)
   }
+}
+
+async function preencherEEnviar(alterados: Partial<Dados> = {}) {
+  await preencher(alterados)
   await userEvent.click(screen.getByRole('button', { name: /cadastrar gestante/i }))
 }
 
@@ -174,5 +179,19 @@ describe('FormPreCadastroGestante', () => {
     expect(onCadastrado).not.toHaveBeenCalled()
     expect(screen.getByLabelText('Nome completo')).toHaveValue('Maria da Silva')
     expect(screen.getByRole('button', { name: /cadastrar gestante/i })).toBeEnabled()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('{}', { status: 201 }))
+    const onCadastrado = vi.fn()
+    renderizar(onCadastrado)
+
+    await preencher()
+    cliqueDuplo(screen.getByRole('button', { name: /cadastrar gestante/i }))
+
+    await vi.waitFor(() => expect(onCadastrado).toHaveBeenCalled())
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

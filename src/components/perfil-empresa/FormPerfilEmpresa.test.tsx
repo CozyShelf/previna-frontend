@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormPerfilEmpresa } from './FormPerfilEmpresa'
 
 const EMPRESA = {
@@ -130,5 +131,18 @@ describe('FormPerfilEmpresa', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
     expect(screen.queryByText('Alterações salvas.')).not.toBeInTheDocument()
     expect(onSalvo).not.toHaveBeenCalled()
+  })
+
+  it('salva uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response(JSON.stringify(EMPRESA)))
+    render(<FormPerfilEmpresa onSalvo={vi.fn()} />)
+
+    await screen.findByLabelText('E-mail')
+    cliqueDuplo(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+    expect(await screen.findByText('Alterações salvas.')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

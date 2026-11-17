@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { hoje } from '@/lib/datas'
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { GestantePage } from './GestantePage'
 
 const GESTANTE = {
@@ -235,5 +236,27 @@ describe('GestantePage', () => {
     expect(
       await screen.findByText('Cadastro de Hemograma completo realizado com sucesso.'),
     ).toBeInTheDocument()
+  })
+
+  it('confirma uma vez só no clique duplo', async () => {
+    const fetch = responderComAcoes()
+    renderizar()
+
+    cliqueDuplo(await screen.findByRole('button', { name: /confirmar realização/i }))
+
+    expect(
+      await screen.findByText(/presença confirmada e 25 pontos creditados/i),
+    ).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
+  })
+
+  it('registra o não comparecimento uma vez só no clique duplo', async () => {
+    const fetch = responderComAcoes()
+    renderizar()
+
+    cliqueDuplo(await screen.findByRole('button', { name: /não compareceu/i }))
+
+    expect(await screen.findByText('Não comparecimento registrado.')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

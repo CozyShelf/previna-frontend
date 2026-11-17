@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { FormProduto, type Produto } from './FormProduto'
 
 function Lista() {
@@ -141,5 +142,18 @@ describe('FormProduto', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(mensagem)
     expect(screen.getByRole('button', { name: /cadastrar produto/i })).toBeEnabled()
+  })
+
+  it('cadastra uma vez só no clique duplo', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response(JSON.stringify({ id: 1 }), { status: 201 }))
+    renderizar()
+
+    await userEvent.type(screen.getByLabelText('Nome'), 'Fralda RN')
+    cliqueDuplo(screen.getByRole('button', { name: /cadastrar produto/i }))
+
+    expect(await screen.findByText('Produto Fralda RN cadastrado com sucesso.')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 import { PromocoesPage } from './PromocoesPage'
 
 const PROMOCOES = [
@@ -107,5 +108,15 @@ describe('PromocoesPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível alterar')
     expect(screen.getByText('Ativa')).toBeInTheDocument()
+  })
+
+  it('desativa uma vez só no clique duplo', async () => {
+    const fetch = responder([PROMOCOES[0]])
+    renderizar()
+
+    cliqueDuplo(await screen.findByRole('button', { name: 'Desativar Semana do bebê' }))
+
+    expect(await screen.findByText('Inativa')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

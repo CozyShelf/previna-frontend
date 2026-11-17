@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CuponsPage } from '@/pages/CuponsPage'
+import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
 
 const CUPOM = {
   id: 7,
@@ -83,5 +84,17 @@ describe('CuponsPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível alterar')
     expect(screen.getByText('Ativo')).toBeInTheDocument()
+  })
+
+  it('desativa uma vez só no clique duplo', async () => {
+    const fetch = responder()
+    renderizar()
+
+    cliqueDuplo(
+      await screen.findByRole('button', { name: 'Desativar 10% de desconto em Fralda RN' }),
+    )
+
+    expect(await screen.findByText('Inativo')).toBeInTheDocument()
+    expect(escritas(fetch)).toHaveLength(1)
   })
 })

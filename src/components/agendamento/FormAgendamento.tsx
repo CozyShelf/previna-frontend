@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { ApiError, get, post } from '@/lib/api'
 import { hoje } from '@/lib/datas'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
@@ -56,7 +57,7 @@ export function FormAgendamento() {
   const [itens, setItens] = useState<Item[]>([vazio(0)])
   const [erros, setErros] = useState<ErrosItem[]>([])
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
 
   useEffect(() => {
     get<TipoAtendimento[]>('/tipos-atendimento')
@@ -87,23 +88,23 @@ export function FormAgendamento() {
       return
     }
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const criados = await post<{ tipo: string }[]>('/agendamentos', {
-        gestante: Number(id),
-        itens: itens.map((item) => ({
-          tipoAtendimento: Number(item.tipoAtendimento),
-          dataPrevista: item.dataPrevista,
-          // Em branco não vai, para ficar nulo no banco em vez de texto vazio
-          ...(item.observacao.trim() && { observacao: item.observacao.trim() }),
-        })),
-      })
-      navigate(`/gestantes/${id}`, { state: { mensagem: confirmacao(criados) } })
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-      setEnviando(false)
-    }
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const criados = await post<{ tipo: string }[]>('/agendamentos', {
+          gestante: Number(id),
+          itens: itens.map((item) => ({
+            tipoAtendimento: Number(item.tipoAtendimento),
+            dataPrevista: item.dataPrevista,
+            // Em branco não vai, para ficar nulo no banco em vez de texto vazio
+            ...(item.observacao.trim() && { observacao: item.observacao.trim() }),
+          })),
+        })
+        navigate(`/gestantes/${id}`, { state: { mensagem: confirmacao(criados) } })
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   if (erroCarga) {

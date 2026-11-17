@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { useValidacao, type Validacoes } from '@/hooks/useValidacao'
 import { ApiError, post } from '@/lib/api'
 import { mascararCnpj, mascararTelefone, somenteDigitos } from '@/lib/mascaras'
@@ -36,28 +37,27 @@ const VALIDACOES: Validacoes<Campo> = {
 
 export function FormPreCadastroEmpresa({ onCadastrado }: FormPreCadastroEmpresaProps) {
   const [erro, setErro] = useState<string>()
-  const [enviando, setEnviando] = useState(false)
+  const { enviando, enviar } = useEnvioUnico()
   const { campo, validarTodos } = useValidacao(VALIDACOES)
 
   async function cadastrar(dados: FormData) {
     if (!validarTodos(dados)) return
 
-    setErro(undefined)
-    setEnviando(true)
-    try {
-      const empresa = await post<EmpresaCadastrada>('/empresas/pre-cadastro', {
-        razaoSocial: dados.get('razaoSocial'),
-        cnpj: somenteDigitos(dados.get('cnpj')),
-        responsavel: dados.get('responsavel'),
-        email: dados.get('email'),
-        telefone: somenteDigitos(dados.get('telefone')),
-      })
-      onCadastrado(empresa)
-    } catch (e) {
-      setErro(mensagemDeErro(e))
-    } finally {
-      setEnviando(false)
-    }
+    await enviar(async () => {
+      setErro(undefined)
+      try {
+        const empresa = await post<EmpresaCadastrada>('/empresas/pre-cadastro', {
+          razaoSocial: dados.get('razaoSocial'),
+          cnpj: somenteDigitos(dados.get('cnpj')),
+          responsavel: dados.get('responsavel'),
+          email: dados.get('email'),
+          telefone: somenteDigitos(dados.get('telefone')),
+        })
+        onCadastrado(empresa)
+      } catch (e) {
+        setErro(mensagemDeErro(e))
+      }
+    })
   }
 
   return (
