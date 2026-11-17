@@ -216,6 +216,71 @@ describe('FormAgendamento', () => {
     )
   })
 
+  // Regra do backend: a gestante não pode ter dois pendentes do mesmo tipo na mesma data
+  it('mostra o conflito de pendente no 409 e mantém o que foi preenchido', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) =>
+      init?.method === 'POST'
+        ? new Response(
+            JSON.stringify({
+              mensagem: 'Essa gestante já tem esse exame ou consulta pendente nessa data',
+            }),
+            { status: 409 },
+          )
+        : new Response(JSON.stringify(TIPOS)),
+    )
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Exame ou consulta'), '3')
+    await userEvent.type(screen.getByLabelText('Data prevista'), amanha())
+    await userEvent.type(screen.getByLabelText('Observação'), 'Jejum de 8h')
+    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Essa gestante já tem esse exame ou consulta pendente nessa data. Mude a data ou o exame.',
+    )
+    // Continua no formulário, com tudo preenchido e o botão liberado para corrigir e reenviar
+    expect(screen.getByLabelText('Exame ou consulta')).toHaveValue('3')
+    expect(screen.getByLabelText('Data prevista')).toHaveValue(amanha())
+    expect(screen.getByLabelText('Observação')).toHaveValue('Jejum de 8h')
+    expect(screen.getByRole('button', { name: 'Cadastrar' })).toBeEnabled()
+
+    await userEvent.clear(screen.getByLabelText('Data prevista'))
+    await userEvent.type(screen.getByLabelText('Data prevista'), '2027-01-20')
+    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar' }))
+    expect(escritas(fetch)).toHaveLength(2)
+    expect(JSON.parse(String(escritas(fetch)[1]?.[1]?.body)).itens).toEqual([
+      { tipoAtendimento: 3, dataPrevista: '2027-01-20', observacao: 'Jejum de 8h' },
+    ])
+  })
+
+  it('recusa o mesmo exame duas vezes na mesma data da lista, sem chamar a API', async () => {
+    const fetch = responder()
+    renderizar()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Exame ou consulta'), '3')
+    await userEvent.type(screen.getByLabelText('Data prevista'), amanha())
+    await userEvent.click(adicionar())
+    await userEvent.selectOptions(screen.getAllByLabelText('Exame ou consulta')[1]!, '3')
+    await userEvent.type(screen.getAllByLabelText('Data prevista')[1]!, amanha())
+    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar' }))
+
+    // Só a repetida é marcada; a primeira ocorrência continua valendo
+    expect(screen.getAllByText('Esse exame ou consulta já está na lista nessa data.')).toHaveLength(
+      1,
+    )
+    expect(fetch.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+
+    // Outra data resolve, e o mesmo exame em datas diferentes é aceito
+    await userEvent.clear(screen.getAllByLabelText('Data prevista')[1]!)
+    await userEvent.type(screen.getAllByLabelText('Data prevista')[1]!, '2027-01-20')
+    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar' }))
+
+    expect(corpoEnviado(fetch).itens).toEqual([
+      { tipoAtendimento: 3, dataPrevista: amanha() },
+      { tipoAtendimento: 3, dataPrevista: '2027-01-20' },
+    ])
+  })
+
   it('cadastra uma vez só no clique duplo', async () => {
     const fetch = responder()
     renderizar()
