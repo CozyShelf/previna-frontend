@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { ListagemComDestino } from '@/test/linhaClicavel'
 import { MedicosPage } from './MedicosPage'
 
 const MEDICOS = [
@@ -83,5 +85,35 @@ describe('MedicosPage', () => {
     renderizar()
 
     expect(await screen.findByText('Nenhum médico cadastrado ainda.')).toBeInTheDocument()
+  })
+
+  describe('linha do médico', () => {
+    it('leva à edição quando se clica em qualquer célula', async () => {
+      responder(MEDICOS)
+      render(
+        <ListagemComDestino caminho="/medicos">
+          <MedicosPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByText('CRM/SP 123456'))
+
+      expect(screen.getByText('Aberto: /medicos/3')).toBeInTheDocument()
+    })
+
+    it('o Editar continua sendo o link da linha, para teclado e nova aba', async () => {
+      responder(MEDICOS)
+      render(
+        <ListagemComDestino caminho="/medicos">
+          <MedicosPage />
+        </ListagemComDestino>,
+      )
+
+      const editar = await screen.findByRole('link', { name: 'Editar Ana Lima' })
+      expect(editar.closest('tr')).not.toHaveAttribute('tabindex')
+      await userEvent.click(editar)
+
+      expect(screen.getByText('Aberto: /medicos/3')).toBeInTheDocument()
+    })
   })
 })

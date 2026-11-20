@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
+import { ListagemComDestino } from '@/test/linhaClicavel'
 import { PromocoesPage } from './PromocoesPage'
 
 const PROMOCOES = [
@@ -149,5 +150,47 @@ describe('PromocoesPage', () => {
 
     expect(await screen.findByText('Inativa')).toBeInTheDocument()
     expect(escritas(fetch)).toHaveLength(1)
+  })
+
+  describe('linha da promoção', () => {
+    it('leva à edição quando se clica em qualquer célula', async () => {
+      responder(PROMOCOES)
+      render(
+        <ListagemComDestino caminho="/promocoes">
+          <PromocoesPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByText('Só nesta semana'))
+
+      expect(screen.getByText('Aberto: /promocoes/1')).toBeInTheDocument()
+    })
+
+    it('o Desativar da linha altera a situação e não leva à edição', async () => {
+      responder([PROMOCOES[0]])
+      render(
+        <ListagemComDestino caminho="/promocoes">
+          <PromocoesPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Desativar Semana do bebê' }))
+
+      expect(await screen.findByText('Inativa')).toBeInTheDocument()
+      expect(screen.queryByText(/^Aberto:/)).not.toBeInTheDocument()
+    })
+
+    it('o Editar continua sendo o link da linha', async () => {
+      responder(PROMOCOES)
+      render(
+        <ListagemComDestino caminho="/promocoes">
+          <PromocoesPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByRole('link', { name: 'Editar Inverno' }))
+
+      expect(screen.getByText('Aberto: /promocoes/2')).toBeInTheDocument()
+    })
   })
 })

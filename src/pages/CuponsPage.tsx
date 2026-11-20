@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 import { Icone } from '@/components/common/Icone'
 import type { Cupom } from '@/components/cupom/FormCupom'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { useEnvioUnico } from '@/hooks/useEnvioUnico'
@@ -90,7 +91,7 @@ function LinhaCupom({ cupom }: { cupom: Cupom }) {
   }
 
   return (
-    <tr>
+    <LinhaClicavel para={`/cupons/${cupom.id}`}>
       <td className="py-3 pr-4 pl-6 font-medium text-zinc-900">{cupom.descricao}</td>
       <td className="px-4 py-3 text-zinc-700 tabular-nums">{formatarData(cupom.dataValidade)}</td>
       <td className="px-4 py-3 text-zinc-700 tabular-nums">
@@ -130,6 +131,6 @@ function LinhaCupom({ cupom }: { cupom: Cupom }) {
           </p>
         )}
       </td>
-    </tr>
+    </LinhaClicavel>
   )
 }

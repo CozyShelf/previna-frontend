@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 import { Alerta } from '@/components/common/Alerta'
 import { Icone } from '@/components/common/Icone'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import type { FiltroListagem } from '@/components/sistema/Listagem'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
@@ -123,7 +124,7 @@ function TabelaTipos({ tipos, excluindo, onExcluir }: TabelaTiposProps) {
         </thead>
         <tbody className="divide-y divide-zinc-100">
           {tipos.map((tipo) => (
-            <tr key={tipo.id}>
+            <LinhaClicavel key={tipo.id} para={`/tipos-atendimento/${tipo.id}`}>
               <td className="py-3 pr-4 pl-6 font-medium text-zinc-900">{tipo.nome}</td>
               <td className="px-4 py-3 text-zinc-700">{CATEGORIAS[tipo.categoria]}</td>
               <td className="px-4 py-3 text-zinc-700 tabular-nums">{tipo.pontosBase}</td>
@@ -147,7 +148,7 @@ function TabelaTipos({ tipos, excluindo, onExcluir }: TabelaTiposProps) {
                   </button>
                 </div>
               </td>
-            </tr>
+            </LinhaClicavel>
           ))}
         </tbody>
       </table>
