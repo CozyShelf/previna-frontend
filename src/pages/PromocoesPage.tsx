@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Icone } from '@/components/common/Icone'
 import { CATEGORIAS } from '@/components/produto/categorias'
 import type { Promocao } from '@/components/promocao/FormPromocao'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { useEnvioUnico } from '@/hooks/useEnvioUnico'
@@ -96,7 +97,7 @@ function LinhaPromocao({ promocao }: { promocao: Promocao }) {
   }
 
   return (
-    <tr>
+    <LinhaClicavel para={`/promocoes/${promocao.id}`}>
       <td className="py-3 pr-4 pl-6">
         <p className="font-medium text-zinc-900">{promocao.titulo}</p>
         {promocao.descricao && <p className="text-xs text-zinc-500">{promocao.descricao}</p>}
@@ -142,7 +143,7 @@ function LinhaPromocao({ promocao }: { promocao: Promocao }) {
           </p>
         )}
       </td>
-    </tr>
+    </LinhaClicavel>
   )
 }
 

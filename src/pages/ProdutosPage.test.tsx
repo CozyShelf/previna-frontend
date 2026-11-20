@@ -1,7 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { ListagemComDestino } from '@/test/linhaClicavel'
 import { ProdutosPage } from './ProdutosPage'
 
 const PRODUTOS = [
@@ -69,5 +71,35 @@ describe('ProdutosPage', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Produto Fralda RN cadastrado')
     expect(await screen.findByText('Nenhum produto cadastrado ainda.')).toBeInTheDocument()
+  })
+
+  describe('linha do produto', () => {
+    it('leva à edição quando se clica em qualquer célula', async () => {
+      responder(PRODUTOS)
+      render(
+        <ListagemComDestino caminho="/produtos">
+          <ProdutosPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByText('Pacote com 30'))
+
+      expect(screen.getByText('Aberto: /produtos/10')).toBeInTheDocument()
+    })
+
+    it('o Editar continua sendo o link da linha, para teclado e nova aba', async () => {
+      responder(PRODUTOS)
+      render(
+        <ListagemComDestino caminho="/produtos">
+          <ProdutosPage />
+        </ListagemComDestino>,
+      )
+
+      const editar = await screen.findByRole('link', { name: 'Editar Body de algodão' })
+      expect(editar.closest('tr')).not.toHaveAttribute('tabindex')
+      await userEvent.click(editar)
+
+      expect(screen.getByText('Aberto: /produtos/11')).toBeInTheDocument()
+    })
   })
 })

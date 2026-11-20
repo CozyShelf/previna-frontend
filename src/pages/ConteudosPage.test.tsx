@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
+import { ListagemComDestino } from '@/test/linhaClicavel'
 import { ConteudosPage } from './ConteudosPage'
 
 const PAGINA = {
@@ -199,5 +200,52 @@ describe('ConteudosPage', () => {
     )
     expect(escritas(fetch)).toHaveLength(1)
     expect(confirmar).toHaveBeenCalledTimes(1)
+  })
+
+  describe('linha do conteúdo', () => {
+    it('leva à edição quando se clica em qualquer célula', async () => {
+      mockarApi(() => new Response('{}'))
+      render(
+        <ListagemComDestino caminho="/conteudos">
+          <ConteudosPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByText('Coma de tudo um pouco'))
+
+      expect(screen.getByText('Aberto: /conteudos/10')).toBeInTheDocument()
+    })
+
+    it('o Excluir da linha pede a confirmação e não leva à edição', async () => {
+      mockarApi(() => new Response('{}'))
+      const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false)
+      render(
+        <ListagemComDestino caminho="/conteudos">
+          <ConteudosPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Excluir Calendário de vacinação' }),
+      )
+
+      expect(confirmar).toHaveBeenCalledOnce()
+      expect(screen.queryByText(/^Aberto:/)).not.toBeInTheDocument()
+    })
+
+    it('o Editar continua sendo o link da linha', async () => {
+      mockarApi(() => new Response('{}'))
+      render(
+        <ListagemComDestino caminho="/conteudos">
+          <ConteudosPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(
+        await screen.findByRole('link', { name: 'Editar Calendário de vacinação' }),
+      )
+
+      expect(screen.getByText('Aberto: /conteudos/11')).toBeInTheDocument()
+    })
   })
 })

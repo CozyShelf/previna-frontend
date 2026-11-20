@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CuponsPage } from '@/pages/CuponsPage'
 import { cliqueDuplo, escritas } from '@/test/cliqueDuplo'
+import { ListagemComDestino } from '@/test/linhaClicavel'
 
 const CUPOM = {
   id: 7,
@@ -96,5 +97,51 @@ describe('CuponsPage', () => {
 
     expect(await screen.findByText('Inativo')).toBeInTheDocument()
     expect(escritas(fetch)).toHaveLength(1)
+  })
+
+  describe('linha do cupom', () => {
+    it('leva à edição quando se clica em qualquer célula', async () => {
+      responder()
+      render(
+        <ListagemComDestino caminho="/cupons">
+          <CuponsPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(await screen.findByText('1.500'))
+
+      expect(screen.getByText('Aberto: /cupons/7')).toBeInTheDocument()
+    })
+
+    it('o Desativar da linha altera a situação e não leva à edição', async () => {
+      responder()
+      render(
+        <ListagemComDestino caminho="/cupons">
+          <CuponsPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Desativar 10% de desconto em Fralda RN' }),
+      )
+
+      expect(await screen.findByText('Inativo')).toBeInTheDocument()
+      expect(screen.queryByText(/^Aberto:/)).not.toBeInTheDocument()
+    })
+
+    it('o Editar continua sendo o link da linha', async () => {
+      responder()
+      render(
+        <ListagemComDestino caminho="/cupons">
+          <CuponsPage />
+        </ListagemComDestino>,
+      )
+
+      await userEvent.click(
+        await screen.findByRole('link', { name: 'Editar 10% de desconto em Fralda RN' }),
+      )
+
+      expect(screen.getByText('Aberto: /cupons/7')).toBeInTheDocument()
+    })
   })
 })

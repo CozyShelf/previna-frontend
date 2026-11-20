@@ -5,6 +5,7 @@ import { CATEGORIAS, OPCOES_CATEGORIA } from '@/components/produto/categorias'
 import type { Produto } from '@/components/produto/FormProduto'
 import type { FiltroListagem } from '@/components/sistema/Listagem'
 import { Avatar } from '@/components/sistema/Avatar'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import { Listagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { urlDaApi } from '@/lib/api'
@@ -71,7 +72,7 @@ function TabelaProdutos({ produtos }: { produtos: Produto[] }) {
         </thead>
         <tbody className="divide-y divide-zinc-100">
           {produtos.map((produto) => (
-            <tr key={produto.id}>
+            <LinhaClicavel key={produto.id} para={`/produtos/${produto.id}`}>
               <td className="py-3 pr-4 pl-6">
                 <div className="flex items-center gap-3">
                   <Avatar
@@ -101,7 +102,7 @@ function TabelaProdutos({ produtos }: { produtos: Produto[] }) {
                   Editar
                 </Link>
               </td>
-            </tr>
+            </LinhaClicavel>
           ))}
         </tbody>
       </table>

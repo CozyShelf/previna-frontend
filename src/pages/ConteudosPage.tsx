@@ -10,6 +10,7 @@ import {
   TIPOS,
   type Conteudo,
 } from '@/components/conteudo/tipos'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { useEnvioUnico } from '@/hooks/useEnvioUnico'
@@ -141,7 +142,7 @@ function TabelaConteudos({ conteudos, excluindo, onExcluir }: TabelaConteudosPro
         </thead>
         <tbody className="divide-y divide-zinc-100">
           {conteudos.map((conteudo) => (
-            <tr key={conteudo.id}>
+            <LinhaClicavel key={conteudo.id} para={`/conteudos/${conteudo.id}`}>
               <td className="py-3 pr-4 pl-6">
                 <p className="font-medium text-zinc-900">{conteudo.titulo}</p>
                 {conteudo.resumo && <p className="text-xs text-zinc-500">{conteudo.resumo}</p>}
@@ -175,7 +176,7 @@ function TabelaConteudos({ conteudos, excluindo, onExcluir }: TabelaConteudosPro
                   </button>
                 </div>
               </td>
-            </tr>
+            </LinhaClicavel>
           ))}
         </tbody>
       </table>

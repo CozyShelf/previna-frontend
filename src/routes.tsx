@@ -43,95 +43,109 @@ export const rotas: RouteObject[] = [
         element: <SistemaLayout />,
         handle: titulo('Início'),
         children: [
+          // Comuns a todos os perfis: o início muda conforme o perfil (só o médico tem agenda)
           { index: true, element: <InicioPage /> },
+          { path: 'perfil', element: <PerfilPage />, handle: titulo('Meu perfil') },
           {
-            path: 'gestantes',
-            handle: titulo('Gestantes'),
+            // Médico: as gestantes que acompanha e os próprios tipos de atendimento
+            element: <RotaProtegida perfis={['MEDICO']} />,
             children: [
-              { index: true, element: <GestantesPage /> },
               {
-                path: 'pre-cadastro',
-                element: <PreCadastroGestantePage />,
-                handle: titulo('Pré-cadastro'),
+                path: 'gestantes',
+                handle: titulo('Gestantes'),
+                children: [
+                  { index: true, element: <GestantesPage /> },
+                  {
+                    path: 'pre-cadastro',
+                    element: <PreCadastroGestantePage />,
+                    handle: titulo('Pré-cadastro'),
+                  },
+                  { path: ':id', element: <GestantePage />, handle: titulo('Gestante') },
+                  {
+                    path: ':id/agendamentos/novo',
+                    element: <CadastroAgendamentoPage />,
+                    handle: titulo('Novo exame ou consulta'),
+                  },
+                ],
               },
-              { path: ':id', element: <GestantePage />, handle: titulo('Gestante') },
               {
-                path: ':id/agendamentos/novo',
-                element: <CadastroAgendamentoPage />,
-                handle: titulo('Novo exame ou consulta'),
-              },
-            ],
-          },
-          {
-            path: 'tipos-atendimento',
-            handle: titulo('Tipos de atendimento'),
-            children: [
-              { index: true, element: <TiposAtendimentoPage /> },
-              { path: 'novo', element: <TipoAtendimentoPage />, handle: titulo('Cadastro') },
-              { path: ':id', element: <TipoAtendimentoPage />, handle: titulo('Edição') },
-            ],
-          },
-          {
-            path: 'conteudos',
-            handle: titulo('Conteúdo educativo'),
-            children: [
-              { index: true, element: <ConteudosPage /> },
-              { path: 'novo', element: <ConteudoPage />, handle: titulo('Cadastro') },
-              { path: ':id', element: <ConteudoPage />, handle: titulo('Edição') },
-            ],
-          },
-          {
-            path: 'empresas',
-            handle: titulo('Empresas parceiras'),
-            children: [
-              { index: true, element: <EmpresasPage /> },
-              {
-                path: 'pre-cadastro',
-                element: <PreCadastroEmpresaPage />,
-                handle: titulo('Pré-cadastro'),
+                path: 'tipos-atendimento',
+                handle: titulo('Tipos de atendimento'),
+                children: [
+                  { index: true, element: <TiposAtendimentoPage /> },
+                  { path: 'novo', element: <TipoAtendimentoPage />, handle: titulo('Cadastro') },
+                  { path: ':id', element: <TipoAtendimentoPage />, handle: titulo('Edição') },
+                ],
               },
             ],
           },
           {
-            path: 'medicos',
-            handle: titulo('Médicos'),
+            // Administrador: médicos, empresas parceiras e conteúdo educativo
+            element: <RotaProtegida perfis={['ADMIN']} />,
             children: [
-              { index: true, element: <MedicosPage /> },
-              { path: 'novo', element: <MedicoPage />, handle: titulo('Cadastro') },
-              { path: ':id', element: <MedicoPage />, handle: titulo('Edição') },
+              {
+                path: 'medicos',
+                handle: titulo('Médicos'),
+                children: [
+                  { index: true, element: <MedicosPage /> },
+                  { path: 'novo', element: <MedicoPage />, handle: titulo('Cadastro') },
+                  { path: ':id', element: <MedicoPage />, handle: titulo('Edição') },
+                ],
+              },
+              {
+                path: 'empresas',
+                handle: titulo('Empresas parceiras'),
+                children: [
+                  { index: true, element: <EmpresasPage /> },
+                  {
+                    path: 'pre-cadastro',
+                    element: <PreCadastroEmpresaPage />,
+                    handle: titulo('Pré-cadastro'),
+                  },
+                ],
+              },
+              {
+                path: 'conteudos',
+                handle: titulo('Conteúdo educativo'),
+                children: [
+                  { index: true, element: <ConteudosPage /> },
+                  { path: 'novo', element: <ConteudoPage />, handle: titulo('Cadastro') },
+                  { path: ':id', element: <ConteudoPage />, handle: titulo('Edição') },
+                ],
+              },
             ],
           },
           {
-            path: 'produtos',
-            handle: titulo('Produtos'),
-            children: [
-              { index: true, element: <ProdutosPage /> },
-              { path: 'novo', element: <ProdutoPage />, handle: titulo('Cadastro') },
-              { path: ':id', element: <ProdutoPage />, handle: titulo('Edição') },
-            ],
-          },
-          {
-            path: 'promocoes',
-            handle: titulo('Promoções'),
-            children: [
-              { index: true, element: <PromocoesPage /> },
-              { path: 'novo', element: <PromocaoPage />, handle: titulo('Cadastro') },
-              { path: ':id', element: <PromocaoPage />, handle: titulo('Edição') },
-            ],
-          },
-          {
-            path: 'cupons',
-            handle: titulo('Cupons'),
-            children: [
-              { index: true, element: <CuponsPage /> },
-              { path: 'novo', element: <CupomPage />, handle: titulo('Cadastro') },
-              { path: ':id', element: <CupomPage />, handle: titulo('Edição') },
-            ],
-          },
-          {
-            // Só a empresa parceira valida os códigos dos próprios cupons e promoções
+            // Empresa parceira: o catálogo e a validação dos códigos dos próprios cupons e promoções
             element: <RotaProtegida perfis={['EMPRESA_PARCEIRA']} />,
             children: [
+              {
+                path: 'produtos',
+                handle: titulo('Produtos'),
+                children: [
+                  { index: true, element: <ProdutosPage /> },
+                  { path: 'novo', element: <ProdutoPage />, handle: titulo('Cadastro') },
+                  { path: ':id', element: <ProdutoPage />, handle: titulo('Edição') },
+                ],
+              },
+              {
+                path: 'promocoes',
+                handle: titulo('Promoções'),
+                children: [
+                  { index: true, element: <PromocoesPage /> },
+                  { path: 'novo', element: <PromocaoPage />, handle: titulo('Cadastro') },
+                  { path: ':id', element: <PromocaoPage />, handle: titulo('Edição') },
+                ],
+              },
+              {
+                path: 'cupons',
+                handle: titulo('Cupons'),
+                children: [
+                  { index: true, element: <CuponsPage /> },
+                  { path: 'novo', element: <CupomPage />, handle: titulo('Cadastro') },
+                  { path: ':id', element: <CupomPage />, handle: titulo('Edição') },
+                ],
+              },
               {
                 path: 'validar-cupom',
                 element: <ValidarCupomPage />,
@@ -139,12 +153,17 @@ export const rotas: RouteObject[] = [
               },
             ],
           },
-          { path: 'perfil', element: <PerfilPage />, handle: titulo('Meu perfil') },
         ],
       },
       {
-        element: <AppLayout />,
-        children: [{ path: '/tutorial', element: <TutorialEmpresaPage /> }],
+        // O tutorial é o da empresa parceira, aberto logo depois do primeiro acesso dela
+        element: <RotaProtegida perfis={['EMPRESA_PARCEIRA']} />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [{ path: '/tutorial', element: <TutorialEmpresaPage /> }],
+          },
+        ],
       },
     ],
   },

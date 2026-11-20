@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Icone } from '@/components/common/Icone'
 import type { Medico } from '@/components/medico/FormMedico'
 import { Avatar } from '@/components/sistema/Avatar'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { mascararCpf } from '@/lib/mascaras'
@@ -72,7 +73,7 @@ function TabelaMedicos({ medicos }: { medicos: Medico[] }) {
         </thead>
         <tbody className="divide-y divide-zinc-100">
           {medicos.map((medico) => (
-            <tr key={medico.id}>
+            <LinhaClicavel key={medico.id} para={`/medicos/${medico.id}`}>
               <td className="py-3 pr-4 pl-6">
                 <div className="flex items-center gap-3">
                   <Avatar nome={medico.nome} />
@@ -99,7 +100,7 @@ function TabelaMedicos({ medicos }: { medicos: Medico[] }) {
                   Editar
                 </Link>
               </td>
-            </tr>
+            </LinhaClicavel>
           ))}
         </tbody>
       </table>

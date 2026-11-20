@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Icone } from '@/components/common/Icone'
 import { Avatar } from '@/components/sistema/Avatar'
 import { ComoFunciona, type Passo } from '@/components/sistema/ComoFunciona'
+import { LinhaClicavel } from '@/components/sistema/LinhaClicavel'
 import { Listagem, type FiltroListagem } from '@/components/sistema/Listagem'
 import { PageHeader } from '@/components/sistema/PageHeader'
 import { FILTRO_SITUACAO } from '@/components/sistema/filtros'
@@ -105,7 +106,8 @@ function TabelaGestantes({ gestantes, comMedico }: TabelaGestantesProps) {
         </thead>
         <tbody className="divide-y divide-zinc-100">
           {gestantes.map((gestante) => (
-            <tr key={gestante.id}>
+            // A linha inteira leva à gestante; o nome continua sendo o link para teclado e nova aba
+            <LinhaClicavel key={gestante.id} para={`/gestantes/${gestante.id}`}>
               <td className="py-3 pr-4 pl-6">
                 <div className="flex items-center gap-3">
                   <Avatar nome={gestante.nome} />
@@ -133,7 +135,7 @@ function TabelaGestantes({ gestantes, comMedico }: TabelaGestantesProps) {
               <td className="px-4 py-3">
                 <SituacaoConta primeiroAcessoPendente={gestante.primeiroAcessoPendente} />
               </td>
-            </tr>
+            </LinhaClicavel>
           ))}
         </tbody>
       </table>

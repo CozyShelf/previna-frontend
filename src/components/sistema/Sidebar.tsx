@@ -1,40 +1,12 @@
 import { NavLink } from 'react-router-dom'
 
-import { Icone, type NomeIcone } from '@/components/common/Icone'
+import { Icone } from '@/components/common/Icone'
 import PrevinaLogo from '@/components/common/PrevinaLogo'
+import { ITENS_MENU } from '@/components/sistema/menu'
 import { perfilDaSessao } from '@/lib/auth'
 
-interface ItemMenu {
-  to: string
-  label: string
-  icone: NomeIcone
-}
-
-const INICIO: ItemMenu = { to: '/', label: 'Início', icone: 'inicio' }
-
-const ITENS: Record<string, ItemMenu[]> = {
-  MEDICO: [
-    INICIO,
-    { to: '/gestantes', label: 'Gestantes', icone: 'gestantes' },
-    { to: '/tipos-atendimento', label: 'Tipos de atendimento', icone: 'validar' },
-  ],
-  ADMIN: [
-    INICIO,
-    { to: '/medicos', label: 'Médicos', icone: 'medicos' },
-    { to: '/empresas', label: 'Empresas parceiras', icone: 'empresas' },
-    { to: '/conteudos', label: 'Conteúdo educativo', icone: 'conteudo' },
-  ],
-  EMPRESA_PARCEIRA: [
-    INICIO,
-    { to: '/produtos', label: 'Produtos', icone: 'produto' },
-    { to: '/promocoes', label: 'Promoções', icone: 'promocao' },
-    { to: '/cupons', label: 'Cupons', icone: 'cupom' },
-    { to: '/validar-cupom', label: 'Validar cupom', icone: 'validar' },
-  ],
-}
-
 export function Sidebar() {
-  const itens = ITENS[perfilDaSessao() ?? ''] ?? []
+  const itens = ITENS_MENU[perfilDaSessao() ?? ''] ?? []
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-zinc-200 bg-zinc-100/60">
