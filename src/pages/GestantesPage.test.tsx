@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -29,6 +30,7 @@ function responder(itens: unknown[], perfil?: Partial<Perfil>) {
       <Routes>
         <Route element={<Outlet context={contexto} />}>
           <Route path="/" element={<GestantesPage />} />
+          <Route path="/gestantes/:id" element={<p>Página da gestante</p>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -67,5 +69,44 @@ describe('GestantesPage', () => {
     responder([])
 
     expect(await screen.findByText('Como funciona o pré-cadastro')).toBeInTheDocument()
+  })
+
+  describe('linha da gestante', () => {
+    it('leva à gestante quando se clica em qualquer célula, não só no nome', async () => {
+      responder([MARIA])
+
+      await userEvent.click(await screen.findByText('(11) 98765-4321'))
+
+      expect(screen.getByText('Página da gestante')).toBeInTheDocument()
+    })
+
+    it('o nome continua sendo o link para a gestante, para teclado e nova aba', async () => {
+      responder([MARIA])
+
+      const nome = await screen.findByRole('link', { name: 'Maria Silva' })
+      expect(nome).toHaveAttribute('href', '/gestantes/1')
+      await userEvent.click(nome)
+
+      expect(screen.getByText('Página da gestante')).toBeInTheDocument()
+    })
+
+    it('a linha não vira mais um alvo de tab: o único da linha é o nome', async () => {
+      responder([MARIA])
+
+      const linha = (await screen.findByText('(11) 98765-4321')).closest('tr')!
+      expect(linha).not.toHaveAttribute('tabindex')
+      expect(within(linha).getAllByRole('link')).toHaveLength(1)
+    })
+
+    it('Ctrl+clique numa célula não navega pela linha', async () => {
+      responder([MARIA])
+      const usuario = userEvent.setup()
+      const telefone = await screen.findByText('(11) 98765-4321')
+
+      await usuario.keyboard('{Control>}')
+      await usuario.click(telefone)
+
+      expect(screen.queryByText('Página da gestante')).not.toBeInTheDocument()
+    })
   })
 })
