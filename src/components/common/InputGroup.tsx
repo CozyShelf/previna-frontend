@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref } from 'react'
 
 import { Icone } from './Icone'
 
@@ -6,6 +6,8 @@ export interface InputGroupProps extends InputHTMLAttributes<HTMLInputElement> {
   labelTxt: string
   hint?: ReactNode
   erro?: string
+  // Para quem precisa focar o campo de fora, ex.: de volta nele depois de enviar
+  ref?: Ref<HTMLInputElement>
 }
 
 export function InputGroup({
