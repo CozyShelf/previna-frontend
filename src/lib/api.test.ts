@@ -88,6 +88,36 @@ describe('api', () => {
     expect((erro as ApiError).codigo).toBe('PROMOCAO_SOBREPOSTA')
   })
 
+  it('guarda a data de uso do resgate já utilizado', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: 'Já utilizado',
+          codigo: 'RESGATE_JA_UTILIZADO',
+          dataUso: '2026-11-19T16:45:00Z',
+        }),
+        { status: 409 },
+      ),
+    )
+
+    const erro = await post('/empresas/cupons/validar', {}).catch((e: unknown) => e)
+
+    expect((erro as ApiError).codigo).toBe('RESGATE_JA_UTILIZADO')
+    expect((erro as ApiError).detalhes).toEqual({ dataUso: '2026-11-19T16:45:00Z' })
+  })
+
+  it.each([
+    ['sem a data', JSON.stringify({ codigo: 'RESGATE_JA_UTILIZADO' })],
+    ['com data que não é texto', JSON.stringify({ codigo: 'RESGATE_JA_UTILIZADO', dataUso: 7 })],
+    ['que não é JSON', '<html>Erro</html>'],
+  ])('com corpo de erro %s, os detalhes ficam vazios', async (_, corpo) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(corpo, { status: 409 }))
+
+    const erro = await get('/a').catch((e: unknown) => e)
+
+    expect((erro as ApiError).detalhes).toEqual({})
+  })
+
   it.each([
     ['vazio', ''],
     ['que não é JSON', '<html>Erro</html>'],

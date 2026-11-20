@@ -22,27 +22,38 @@ export const CODIGOS_DE_ERRO = [
   'CUPOM_INDISPONIVEL',
   'PONTOS_INSUFICIENTES',
   'AGENDAMENTO_PENDENTE_REPETIDO',
+  'RESGATE_NAO_ENCONTRADO',
+  'RESGATE_JA_UTILIZADO',
+  'RESGATE_EXPIRADO',
 ] as const
 
 export type CodigoDeErro = (typeof CODIGOS_DE_ERRO)[number]
+
+// Dados extras que alguns erros trazem junto do código, ex.: quando o resgate já foi usado (RESGATE_JA_UTILIZADO)
+export interface DetalhesDoErro {
+  dataUso?: string
+}
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     public codigo?: CodigoDeErro,
+    public detalhes: DetalhesDoErro = {},
   ) {
     super(`Erro ${status} na requisição`)
   }
 }
 
-// Tolerante: corpo vazio, que não é JSON, sem o campo ou com um código desconhecido dá undefined
-async function lerCodigo(resposta: Response): Promise<CodigoDeErro | undefined> {
+// Tolerante: corpo vazio, que não é JSON, sem o campo ou com um código desconhecido dá código undefined;
+// um detalhe que não é texto fica de fora
+async function lerErro(resposta: Response): Promise<[CodigoDeErro | undefined, DetalhesDoErro]> {
   try {
-    const corpo: unknown = JSON.parse(await resposta.text())
-    const codigo = (corpo as { codigo?: unknown } | null)?.codigo
-    return CODIGOS_DE_ERRO.find((c) => c === codigo)
+    const corpo = JSON.parse(await resposta.text()) as Record<string, unknown> | null
+    const codigo = CODIGOS_DE_ERRO.find((c) => c === corpo?.codigo)
+    const dataUso = corpo?.dataUso
+    return [codigo, typeof dataUso === 'string' ? { dataUso } : {}]
   } catch {
-    return undefined
+    return [undefined, {}]
   }
 }
 
@@ -63,7 +74,7 @@ async function requisicao<T>(caminho: string, init: RequestInit = {}): Promise<T
     window.location.assign('/login')
   }
   if (!resposta.ok) {
-    throw new ApiError(resposta.status, await lerCodigo(resposta))
+    throw new ApiError(resposta.status, ...(await lerErro(resposta)))
   }
   return resposta.json()
 }
