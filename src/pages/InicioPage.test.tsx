@@ -1,9 +1,10 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { InicioPage } from './InicioPage'
 import { encerrarSessao, salvarToken } from '@/lib/auth'
+import { caminhosChamados, simularApi } from '@/test/api'
 import { entrarComo } from '@/test/sessao'
 
 const ATENDIMENTOS = [
@@ -40,7 +41,22 @@ function renderizar() {
   )
 }
 
+const PAINEL_MEDICO = {
+  gestantesAcompanhadas: 2,
+  atrasados: { total: 0, itens: [] },
+  proximos7Dias: { total: 0, itens: [] },
+  semAgendamentoPendente: { total: 0, itens: [] },
+}
+
+const agenda = () => screen.getByRole('region', { name: 'Exames e consultas de hoje' })
+
 vi.mock('@/hooks/usePerfil', () => ({ usePerfil: () => ({ nome: 'Dra. Ana', login: 'ana' }) }))
+
+beforeEach(() => {
+  // Sem resposta definida no teste, a API fica pendente: o painel continua "carregando" e não muda a tela
+  // depois que o teste já conferiu a saudação
+  vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}))
+})
 
 afterEach(() => {
   vi.useRealTimers()
@@ -50,39 +66,87 @@ afterEach(() => {
 
 describe('InicioPage', () => {
   it('lista os exames e consultas de hoje, na ordem que a API devolve', async () => {
-    const fetch = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(JSON.stringify(ATENDIMENTOS)))
+    simularApi({
+      '/agendamentos/hoje': [{ corpo: ATENDIMENTOS }],
+      '/painel/medico': [{ corpo: PAINEL_MEDICO }],
+    })
     entrarComoMedico()
     renderizar()
 
     expect(await screen.findByText('Maria Teste')).toBeInTheDocument()
     expect(screen.getByText('Hemograma completo')).toBeInTheDocument()
-    const linhas = screen.getAllByRole('link')
+    const linhas = within(agenda()).getAllByRole('link')
     expect(linhas.map((linha) => linha.textContent)).toEqual([
       'Maria TesteHemograma completoExame',
       'Joana TesteConsulta puerperalConsulta',
     ])
     // Cada item leva ao detalhe da sua gestante
     expect(linhas[0]).toHaveAttribute('href', '/gestantes/7')
-    expect(String(fetch.mock.calls[0]?.[0])).toMatch(/\/agendamentos\/hoje$/)
   })
 
   it('mostra um estado vazio amigável quando não há nada para hoje', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]'))
+    simularApi({
+      '/agendamentos/hoje': [{ corpo: [] }],
+      '/painel/medico': [{ corpo: PAINEL_MEDICO }],
+    })
     entrarComoMedico()
     renderizar()
 
     expect(await screen.findByText(/nada marcado para hoje/i)).toBeInTheDocument()
-    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(within(agenda()).queryByRole('link')).not.toBeInTheDocument()
   })
 
-  it('não busca a agenda para quem não é médico', () => {
-    const fetch = vi.spyOn(globalThis, 'fetch')
-    entrarComoMedico('EMPRESA_PARCEIRA')
+  it('mostra a agenda do dia antes do painel do médico', async () => {
+    simularApi({
+      '/agendamentos/hoje': [{ corpo: ATENDIMENTOS }],
+      '/painel/medico': [{ corpo: PAINEL_MEDICO }],
+    })
+    entrarComoMedico()
     renderizar()
 
-    expect(screen.queryByText('Exames e consultas de hoje')).not.toBeInTheDocument()
+    const atrasados = await screen.findByRole('region', { name: 'Atrasados' })
+    expect(agenda().compareDocumentPosition(atrasados)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('um erro no painel não esconde a saudação nem a agenda do dia', async () => {
+    simularApi({
+      '/agendamentos/hoje': [{ corpo: ATENDIMENTOS }],
+      '/painel/medico': [{ status: 500, corpo: {} }],
+    })
+    entrarComoMedico()
+    renderizar()
+
+    expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dra. Ana')
+    expect(await within(agenda()).findByText('Maria Teste')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['MEDICO', ['/agendamentos/hoje', '/painel/medico'], 'Atrasados'],
+    ['EMPRESA_PARCEIRA', ['/painel/empresa'], 'Cupons que vencem em 7 dias'],
+    ['ADMIN', ['/painel/admin'], 'Atividade recente'],
+  ])('o perfil %s chama só a sua rota', async (perfil, caminhos, secao) => {
+    const fetch = simularApi({
+      '/agendamentos/hoje': [{ corpo: [] }],
+      '/painel/medico': [{ corpo: PAINEL_MEDICO }],
+      '/painel/empresa': [{ corpo: {} }],
+      '/painel/admin': [{ corpo: {} }],
+    })
+    entrarComo(perfil)
+    renderizar()
+
+    expect(await screen.findByRole('region', { name: secao })).toBeInTheDocument()
+    expect(caminhosChamados(fetch).sort()).toEqual(caminhos)
+    // A agenda do dia é só do médico
+    expect(screen.queryByText('Exames e consultas de hoje') !== null).toBe(perfil === 'MEDICO')
+  })
+
+  it('não mostra painel nem chama a API para outro perfil', () => {
+    const fetch = simularApi({})
+    entrarComo('GESTANTE')
+    renderizar()
+
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
   })
 
