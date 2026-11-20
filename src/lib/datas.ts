@@ -1,6 +1,15 @@
 // aaaa-mm-dd -> dd/mm/aaaa
 export const formatarData = (data: string) => data.split('-').reverse().join('/')
 
+const DATA = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
+const HORA = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' })
+
+// Instante da API (ISO, ex.: 2026-11-19T16:45:00Z) -> "19/11/2026 às 13:45", no fuso do navegador
+export function formatarDataHora(instante: string) {
+  const data = new Date(instante)
+  return `${DATA.format(data)} às ${HORA.format(data)}`
+}
+
 // sv-SE formata a data local como aaaa-mm-dd, o formato do input de data
 export const hoje = () => new Date().toLocaleDateString('sv-SE')
 

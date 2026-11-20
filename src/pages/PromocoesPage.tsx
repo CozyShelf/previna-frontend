@@ -9,11 +9,10 @@ import { PageHeader } from '@/components/sistema/PageHeader'
 import { useEnvioUnico } from '@/hooks/useEnvioUnico'
 import { ApiError, put } from '@/lib/api'
 import { formatarData } from '@/lib/datas'
+import { formatarPercentual } from '@/lib/mascaras'
 import BUTTON_CLASSES from '@/types/ButtonClasses'
 
 const COLUNAS = ['Promoção', 'Categoria', 'Desconto', 'Vigência', 'Situação']
-
-const PERCENTUAL = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
 
 export function PromocoesPage() {
   // Confirmação deixada pelo formulário ao voltar para a lista
@@ -104,7 +103,7 @@ function LinhaPromocao({ promocao }: { promocao: Promocao }) {
       </td>
       <td className="px-4 py-3 text-zinc-700">{CATEGORIAS[promocao.categoria]}</td>
       <td className="px-4 py-3 text-zinc-700 tabular-nums">
-        {PERCENTUAL.format(promocao.desconto)}%
+        {formatarPercentual(promocao.desconto)}
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-zinc-700 tabular-nums">
         {formatarData(promocao.dataInicio)} a {formatarData(promocao.dataFim)}
