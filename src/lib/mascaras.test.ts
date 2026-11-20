@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mascararCnpj, mascararCpf, mascararTelefone } from '@/lib/mascaras'
+import { formatarPercentual, mascararCnpj, mascararCpf, mascararTelefone } from '@/lib/mascaras'
 
 describe('mascararCpf', () => {
   it.each([
@@ -40,5 +40,15 @@ describe('mascararCnpj', () => {
     ['abc', ''],
   ])('%s -> %s', (valor, esperado) => {
     expect(mascararCnpj(valor)).toBe(esperado)
+  })
+})
+
+describe('formatarPercentual', () => {
+  it.each([
+    [10, '10%'],
+    [12.5, '12,5%'],
+    [33.333, '33,33%'],
+  ])('%s -> %s', (valor, esperado) => {
+    expect(formatarPercentual(valor)).toBe(esperado)
   })
 })

@@ -47,6 +47,7 @@ describe('Sidebar', () => {
         ['Produtos', '/produtos'],
         ['Promoções', '/promocoes'],
         ['Cupons', '/cupons'],
+        ['Validar cupom', '/validar-cupom'],
       ],
     ],
   ])('o perfil %s vê só os itens do seu papel', (perfil, esperados) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/common/Button'
 import { Icone, type NomeIcone } from '@/components/common/Icone'
@@ -9,6 +9,8 @@ interface Etapa {
   titulo: string
   descricao: string
   icone: NomeIcone
+  // Atalho para a tela da etapa
+  link?: { to: string; rotulo: string }
 }
 
 const ETAPAS: Etapa[] = [
@@ -33,8 +35,9 @@ const ETAPAS: Etapa[] = [
   {
     titulo: 'Valide os cupons resgatados',
     descricao:
-      'As gestantes ganham pontos indo às consultas de pré-natal e trocam por seus cupons. Na hora da compra, confira o código do cupom no portal para registrar o uso.',
+      'As gestantes ganham pontos indo às consultas de pré-natal e trocam por seus cupons, ou resgatam suas promoções. Na hora da compra, abra Validar cupom no menu e digite o código que ela mostra no app, ou leia o QR code com o leitor. O uso fica registrado e o mesmo código não vale de novo.',
     icone: 'validar',
+    link: { to: '/validar-cupom', rotulo: 'Ir para Validar cupom' },
   },
 ]
 
@@ -71,6 +74,14 @@ export function TutorialEmpresaPage() {
             </p>
             <h2 className="text-lg font-semibold text-zinc-900">{etapa.titulo}</h2>
             <p className="text-zinc-600">{etapa.descricao}</p>
+            {etapa.link && (
+              <Link
+                to={etapa.link.to}
+                className="self-start font-medium text-previna-600 hover:text-previna-700"
+              >
+                {etapa.link.rotulo}
+              </Link>
+            )}
           </div>
         </div>
 

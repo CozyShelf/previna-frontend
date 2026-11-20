@@ -8,6 +8,11 @@ const REAIS = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
 // 39.9 -> R$ 39,90
 export const formatarPreco = (valor: number) => REAIS.format(valor)
 
+const PERCENTUAL = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
+
+// 12.5 -> 12,5%
+export const formatarPercentual = (valor: number) => `${PERCENTUAL.format(valor)}%`
+
 // Preço e desconto digitados com vírgula ("39,90") vão para a API com ponto
 export const decimalDaApi = (valor: FormDataEntryValue | null) =>
   String(valor ?? '')

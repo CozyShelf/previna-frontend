@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, type RouteObject } from 'react-router-dom'
 
 import { RotaProtegida } from '@/components/RotaProtegida'
 import type { HandleRota } from '@/components/sistema/Trilha'
@@ -28,10 +28,12 @@ import { PromocoesPage } from '@/pages/PromocoesPage'
 import { TipoAtendimentoPage } from '@/pages/TipoAtendimentoPage'
 import { TiposAtendimentoPage } from '@/pages/TiposAtendimentoPage'
 import { TutorialEmpresaPage } from '@/pages/TutorialEmpresaPage'
+import { ValidarCupomPage } from '@/pages/ValidarCupomPage'
 
 const titulo = (texto: string): HandleRota => ({ titulo: texto })
 
-export const router = createBrowserRouter([
+// Exportadas para os testes montarem as mesmas rotas num router em memória
+export const rotas: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
   {
     element: <RotaProtegida />,
@@ -126,6 +128,17 @@ export const router = createBrowserRouter([
               { path: ':id', element: <CupomPage />, handle: titulo('Edição') },
             ],
           },
+          {
+            // Só a empresa parceira valida os códigos dos próprios cupons e promoções
+            element: <RotaProtegida perfis={['EMPRESA_PARCEIRA']} />,
+            children: [
+              {
+                path: 'validar-cupom',
+                element: <ValidarCupomPage />,
+                handle: titulo('Validar cupom'),
+              },
+            ],
+          },
           { path: 'perfil', element: <PerfilPage />, handle: titulo('Meu perfil') },
         ],
       },
@@ -143,4 +156,6 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-])
+]
+
+export const router = createBrowserRouter(rotas)
