@@ -35,3 +35,8 @@ Dockerfile*
 .dockerignore
 docker-compose*.yml
 README.md
+
+# Relatórios do Playwright (testes de ponta a ponta)
+playwright-report
+test-results
+blob-report
