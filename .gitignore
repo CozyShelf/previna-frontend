@@ -25,3 +25,9 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright (testes de ponta a ponta)
+playwright-report
+test-results
+blob-report
+playwright/.cache
