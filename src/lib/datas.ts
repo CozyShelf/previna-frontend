@@ -22,3 +22,10 @@ export function idadeGestacional(dum: string, hoje = new Date()) {
   const semanas = plural(Math.floor(dias / 7), 'semana', 'semanas')
   return dias % 7 ? `${semanas} e ${plural(dias % 7, 'dia', 'dias')}` : semanas
 }
+
+// Hora local (0–23) -> saudação. A madrugada (0h–4h59) ainda é "Boa noite"
+export function saudacaoPara(hora: number) {
+  if (hora >= 5 && hora < 12) return 'Bom dia'
+  if (hora >= 12 && hora < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
