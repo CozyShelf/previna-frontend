@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -30,7 +30,7 @@ function entrarComoMedico(perfil = 'MEDICO') {
 }
 
 function renderizar() {
-  render(
+  return render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/" element={<InicioPage />} />
@@ -87,6 +87,7 @@ describe('InicioPage', () => {
   })
 
   it.each([
+    [1, 'Boa noite, Dra. Ana'],
     [9, 'Bom dia, Dra. Ana'],
     [14, 'Boa tarde, Dra. Ana'],
     [21, 'Boa noite, Dra. Ana'],
@@ -97,5 +98,33 @@ describe('InicioPage', () => {
     renderizar()
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(saudacao)
+  })
+
+  it('troca a saudação e a data com a aba aberta, sem recarregar', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(new Date(2030, 0, 15, 11, 59))
+    entrarComo('ADMIN')
+    renderizar()
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Bom dia, Dra. Ana')
+    act(() => vi.advanceTimersByTime(60_000))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Boa tarde, Dra. Ana')
+
+    // Da meia-noite em diante a data também vira
+    vi.setSystemTime(new Date(2030, 0, 15, 23, 58, 30))
+    act(() => vi.advanceTimersByTime(60_000))
+    expect(screen.getByText(/terça-feira, 15 de janeiro de 2030/i)).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(60_000))
+    expect(screen.getByText(/quarta-feira, 16 de janeiro de 2030/i)).toBeInTheDocument()
+  })
+
+  it('limpa o timer ao sair da tela', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    entrarComo('ADMIN')
+    const { unmount } = renderizar()
+
+    expect(vi.getTimerCount()).toBe(1)
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
   })
 })
