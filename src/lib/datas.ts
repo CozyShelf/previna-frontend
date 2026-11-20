@@ -29,3 +29,13 @@ export function saudacaoPara(hora: number) {
   if (hora >= 12 && hora < 18) return 'Boa tarde'
   return 'Boa noite'
 }
+
+// Dias de calendário (no fuso do navegador) entre o instante da API e agora; 0 é hoje. Um instante no
+// futuro, por relógio adiantado, conta como hoje
+export function diasDesde(instante: string, agora = new Date()) {
+  const inicioDoDia = (data: Date) =>
+    new Date(data.getFullYear(), data.getMonth(), data.getDate()).getTime()
+  // round: a virada do horário de verão deixa um dia com 23 ou 25 horas
+  const dias = Math.round((inicioDoDia(agora) - inicioDoDia(new Date(instante))) / 86_400_000)
+  return Math.max(dias, 0)
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatarDataHora, idadeGestacional, saudacaoPara } from '@/lib/datas'
+import { diasDesde, formatarDataHora, idadeGestacional, saudacaoPara } from '@/lib/datas'
 
 describe('idadeGestacional', () => {
   it.each([
@@ -35,5 +35,20 @@ describe('saudacaoPara', () => {
   ])('%s -> %s', (horario, esperado) => {
     const [hora, minuto] = horario.split(':').map(Number)
     expect(saudacaoPara(new Date(2030, 0, 15, hora, minuto).getHours())).toBe(esperado)
+  })
+})
+
+describe('diasDesde', () => {
+  const agora = new Date(2026, 10, 20, 0, 30)
+
+  it.each([
+    // Montados na hora local, para o teste não depender do fuso da máquina
+    [new Date(2026, 10, 20, 0, 5), 0],
+    [new Date(2026, 10, 19, 23, 59), 1],
+    [new Date(2026, 10, 15, 10, 0), 5],
+    // Relógio do servidor adiantado: não vira "há -1 dias"
+    [new Date(2026, 10, 21, 9, 0), 0],
+  ])('%s -> %i', (instante, dias) => {
+    expect(diasDesde(instante.toISOString(), agora)).toBe(dias)
   })
 })
