@@ -29,6 +29,7 @@ const ITENS: Record<string, ItemMenu[]> = {
     { to: '/produtos', label: 'Produtos', icone: 'produto' },
     { to: '/promocoes', label: 'Promoções', icone: 'promocao' },
     { to: '/cupons', label: 'Cupons', icone: 'cupom' },
+    { to: '/validar-cupom', label: 'Validar cupom', icone: 'validar' },
   ],
 }
 
