@@ -31,3 +31,6 @@ playwright-report
 test-results
 blob-report
 playwright/.cache
+
+# Passagem de bastão entre agentes de IA (ver AGENTS.md)
+HANDOFF.md
