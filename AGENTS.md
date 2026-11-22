@@ -41,6 +41,8 @@ npm run e2e:docker                    # E2E na imagem do Playwright; exige a pil
 - **Os E2E gravam no banco de dev.** Nunca aponte-os para outro ambiente.
 - Cobertura subiu: suba os pisos de `test.coverage.thresholds` em `vite.config.ts`.
 - Branches de trabalho partem da `development` e voltam por PR, no padrão Conventional Commits.
+- A `development` só sobe para a `main` quando um módulo inteiro termina (ex.: o módulo de cupons). O deploy é feito
+  depois, a partir da `main`. Não abra PR para a `main` no meio de um módulo.
 
 ## Definição de pronto
 
